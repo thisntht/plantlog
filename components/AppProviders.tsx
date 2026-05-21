@@ -26,6 +26,14 @@ type NewWateringLogInput = {
   memo?: string;
 };
 
+type UpdateWateringLogInput = Partial<{
+  wateredDate: string;
+  soilStatus: SoilStatus;
+  waterAmount: WaterAmount;
+  plantConditions: PlantCondition[];
+  memo: string;
+}>;
+
 type PlantDataContextValue = {
   user: User | null;
   loading: boolean;
@@ -33,12 +41,16 @@ type PlantDataContextValue = {
   plants: Plant[];
   wateringLogs: WateringLog[];
   plantSnoozes: PlantSnooze[];
+  notificationTime: string;
   refresh: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   addPlant: (input: NewPlantInput) => Promise<void>;
   addWateringLog: (input: NewWateringLogInput) => Promise<void>;
+  updateWateringLog: (logId: string, input: UpdateWateringLogInput) => Promise<void>;
+  deleteWateringLog: (logId: string) => Promise<void>;
   snoozePlant: (plantId: string, days: number) => Promise<void>;
+  updateNotificationTime: (time: string) => Promise<void>;
 };
 
 const PlantDataContext = createContext<PlantDataContextValue | null>(null);
@@ -50,6 +62,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
   const [plants, setPlants] = useState<Plant[]>([]);
   const [wateringLogs, setWateringLogs] = useState<WateringLog[]>([]);
   const [plantSnoozes, setPlantSnoozes] = useState<PlantSnooze[]>([]);
+  const [notificationTime, setNotificationTime] = useState("20:00");
   const isDemo = !loading && (!hasSupabaseConfig() || !user);
 
   const refresh = useCallback(async () => {
@@ -75,18 +88,20 @@ export function AppProviders({ children }: { children: ReactNode }) {
       return;
     }
 
-    const [plantsResult, logsResult, snoozesResult] = await Promise.all([
+    const [plantsResult, logsResult, snoozesResult, profileResult] = await Promise.all([
       supabase.from("plants").select("*").order("created_at", { ascending: true }),
       supabase
         .from("watering_logs")
         .select("*, watering_log_photos(*)")
         .order("watered_date", { ascending: false }),
-      supabase.from("plant_snoozes").select("*")
+      supabase.from("plant_snoozes").select("*"),
+      supabase.from("profiles").select("notification_time").eq("id", currentUser.id).maybeSingle()
     ]);
 
     setPlants(plantsResult.data ? plantsResult.data.map(mapPlant) : []);
     setWateringLogs(logsResult.data ? logsResult.data.map(mapWateringLog) : []);
     setPlantSnoozes(snoozesResult.data ? snoozesResult.data.map(mapPlantSnooze) : []);
+    setNotificationTime(profileResult.data?.notification_time?.slice(0, 5) ?? "20:00");
     setLoading(false);
   }, [supabase]);
 
@@ -180,6 +195,53 @@ export function AppProviders({ children }: { children: ReactNode }) {
     [refresh, supabase]
   );
 
+  const updateWateringLog = useCallback(
+    async (logId: string, input: UpdateWateringLogInput) => {
+      if (!supabase || !user) return;
+
+      const payload = {
+        watered_date: input.wateredDate,
+        soil_status: input.soilStatus ?? null,
+        water_amount: input.waterAmount ?? null,
+        plant_conditions: input.plantConditions,
+        memo: input.memo ?? null
+      };
+
+      const { error } = await supabase.from("watering_logs").update(payload).eq("id", logId).eq("user_id", user.id);
+      if (error) throw error;
+      await refresh();
+    },
+    [refresh, supabase, user]
+  );
+
+  const deleteWateringLog = useCallback(
+    async (logId: string) => {
+      if (!supabase || !user) return;
+      const { error } = await supabase.from("watering_logs").delete().eq("id", logId).eq("user_id", user.id);
+      if (error) throw error;
+      await refresh();
+    },
+    [refresh, supabase, user]
+  );
+
+  const updateNotificationTime = useCallback(
+    async (time: string) => {
+      setNotificationTime(time);
+      if (!supabase || !user) return;
+
+      const { error } = await supabase.from("profiles").upsert({
+        id: user.id,
+        display_name: user.email ?? "PlantLog",
+        notification_time: time,
+        is_public: false
+      });
+
+      if (error) throw error;
+      await refresh();
+    },
+    [refresh, supabase, user]
+  );
+
   const value = useMemo(
     () => ({
       user,
@@ -188,14 +250,35 @@ export function AppProviders({ children }: { children: ReactNode }) {
       plants,
       wateringLogs,
       plantSnoozes,
+      notificationTime,
       refresh,
       signInWithGoogle,
       signOut,
       addPlant,
       addWateringLog,
-      snoozePlant
+      updateWateringLog,
+      deleteWateringLog,
+      snoozePlant,
+      updateNotificationTime
     }),
-    [addPlant, addWateringLog, isDemo, loading, plantSnoozes, plants, refresh, signInWithGoogle, signOut, snoozePlant, user, wateringLogs]
+    [
+      addPlant,
+      addWateringLog,
+      deleteWateringLog,
+      isDemo,
+      loading,
+      notificationTime,
+      plantSnoozes,
+      plants,
+      refresh,
+      signInWithGoogle,
+      signOut,
+      snoozePlant,
+      updateNotificationTime,
+      updateWateringLog,
+      user,
+      wateringLogs
+    ]
   );
 
   return <PlantDataContext.Provider value={value}>{children}</PlantDataContext.Provider>;

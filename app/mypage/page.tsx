@@ -9,7 +9,7 @@ import { usePlantData } from "@/components/AppProviders";
 import { profile } from "@/lib/sample-data";
 
 export default function MyPage() {
-  const { user, signOut, isDemo } = usePlantData();
+  const { user, signOut, isDemo, notificationTime, updateNotificationTime } = usePlantData();
 
   return (
     <AppShell>
@@ -34,7 +34,20 @@ export default function MyPage() {
         </div>
       ) : null}
       <section className="mt-4 space-y-2">
-        <SettingRow icon={<Bell className="h-4 w-4" />} label="알림 시간" value={profile.notificationTime} />
+        <div className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-white p-4">
+          <span className="text-neutral-500">
+            <Bell className="h-4 w-4" />
+          </span>
+          <label className="flex flex-1 items-center justify-between gap-3 text-sm font-medium text-neutral-800">
+            알림 시간
+            <input
+              className="h-9 rounded-md border border-neutral-200 bg-white px-2 text-sm text-neutral-700 outline-none focus:border-neutral-500"
+              type="time"
+              value={notificationTime}
+              onChange={(event) => void updateNotificationTime(event.target.value)}
+            />
+          </label>
+        </div>
         <SettingRow icon={<Lock className="h-4 w-4" />} label="공개 여부" value={profile.isPublic ? "공개" : "비공개"} />
       </section>
       {user ? (

@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { addMonths, format, getDay } from "date-fns";
-import { Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { usePlantData } from "@/components/AppProviders";
 import { BottomSheet } from "@/components/BottomSheet";
 import { WateringLogDetailSheet } from "@/components/WateringLogDetailSheet";
@@ -54,6 +54,14 @@ export function MonthlyCalendar() {
       >
         <div className="relative flex min-h-14 items-center justify-center border-b border-neutral-200 px-4">
           <button
+            className="absolute left-2 flex h-10 w-10 items-center justify-center rounded-md text-neutral-400 hover:bg-neutral-50 hover:text-neutral-600"
+            type="button"
+            aria-label="이전 달"
+            onClick={() => moveMonth(-1)}
+          >
+            <ChevronLeft aria-hidden className="h-5 w-5" />
+          </button>
+          <button
             className="rounded-md px-3 py-2 text-lg font-semibold text-neutral-900 hover:bg-neutral-50"
             type="button"
             onClick={() => setShowMonthPicker((current) => !current)}
@@ -73,6 +81,14 @@ export function MonthlyCalendar() {
               }}
             />
           ) : null}
+          <button
+            className="absolute right-2 flex h-10 w-10 items-center justify-center rounded-md text-neutral-400 hover:bg-neutral-50 hover:text-neutral-600"
+            type="button"
+            aria-label="다음 달"
+            onClick={() => moveMonth(1)}
+          >
+            <ChevronRight aria-hidden className="h-5 w-5" />
+          </button>
         </div>
 
         <div className="grid grid-cols-7 text-center text-[0.72rem] font-medium text-neutral-400">
@@ -88,7 +104,7 @@ export function MonthlyCalendar() {
             const day = bucket ? Number(bucket.date.slice(-2)) : null;
             return (
               <button
-                className="min-h-20 border-b border-r border-neutral-200 bg-white p-1.5 text-left align-top transition hover:bg-neutral-50 [&:nth-child(7n)]:border-r-0"
+                className="flex min-h-20 flex-col items-stretch justify-start border-b border-r border-neutral-200 bg-white p-1.5 text-left transition hover:bg-neutral-50 [&:nth-child(7n)]:border-r-0"
                 key={bucket?.date ?? `blank-${index}`}
                 type="button"
                 disabled={!bucket}
