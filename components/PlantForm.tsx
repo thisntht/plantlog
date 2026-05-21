@@ -47,7 +47,7 @@ export function PlantForm() {
   };
 
   return (
-    <form className="space-y-5 rounded-2xl bg-white p-4 shadow-soft">
+    <form className="space-y-5 rounded-lg border border-neutral-200 bg-white p-4">
       <Field label="표시 이름" placeholder="큰 몬스" required value={nickname} onChange={setNickname} />
       <Field label="물주기 주기" placeholder="7" required type="number" suffix="일" value={wateringIntervalDays} onChange={setWateringIntervalDays} />
       <Field label="정식 식물명" placeholder="Monstera deliciosa" value={scientificName} onChange={setScientificName} />
@@ -56,7 +56,7 @@ export function PlantForm() {
       <label className="block">
         <span className="mb-2 block text-sm font-medium text-neutral-700">메모</span>
         <textarea
-          className="min-h-28 w-full resize-none rounded-lg border border-neutral-200 p-3 text-base outline-none focus:border-leaf-400"
+          className="min-h-28 w-full resize-none rounded-md border border-neutral-200 p-3 text-base outline-none focus:border-neutral-500"
           value={memo}
           onChange={(event) => setMemo(event.target.value)}
         />
@@ -67,7 +67,7 @@ export function PlantForm() {
       </button>
       {isDemo ? <p className="text-sm leading-6 text-neutral-500">로그인 전에는 저장되지 않습니다. Google 로그인 후 내 식물을 추가할 수 있어요.</p> : null}
       {error ? <p className="text-sm text-red-500">{error}</p> : null}
-      <button className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-leaf-700 text-sm font-semibold text-white" type="button" onClick={save} disabled={saving}>
+      <button className="flex h-12 w-full items-center justify-center gap-2 rounded-md bg-neutral-900 text-sm font-semibold text-white" type="button" onClick={save} disabled={saving}>
         <Save aria-hidden className="h-4 w-4" />
         {saving ? "저장 중" : "저장"}
       </button>
@@ -96,9 +96,9 @@ function Field({
     <label className="block">
       <span className="mb-2 block text-sm font-medium text-neutral-700">
         {label}
-        {required ? <span className="text-leaf-700"> *</span> : null}
+        {required ? <span className="text-neutral-900"> *</span> : null}
       </span>
-      <div className="flex items-center rounded-lg border border-neutral-200 bg-white px-3 focus-within:border-leaf-400">
+      <div className="flex items-center rounded-md border border-neutral-200 bg-white px-3 focus-within:border-neutral-500">
         <input
           className="h-12 min-w-0 flex-1 bg-transparent text-base outline-none"
           type={type}

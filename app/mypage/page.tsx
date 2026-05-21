@@ -13,9 +13,9 @@ export default function MyPage() {
   return (
     <AppShell>
       <PageHeader title="마이페이지" description="알림 시간과 개인 공개 상태를 관리합니다." />
-      <section className="rounded-2xl bg-white p-4 shadow-soft">
+      <section className="rounded-lg border border-neutral-200 bg-white p-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-leaf-100 text-leaf-700">
+          <div className="flex h-12 w-12 items-center justify-center rounded-md border border-neutral-200 bg-neutral-50 text-neutral-700">
             <UserRound aria-hidden className="h-5 w-5" />
           </div>
           <div>
@@ -24,7 +24,7 @@ export default function MyPage() {
           </div>
         </div>
       </section>
-      {isDemo ? <p className="mt-4 rounded-xl bg-white p-4 text-sm leading-6 text-neutral-500 shadow-[0_8px_25px_rgba(35,55,40,0.05)]">로그인하면 식물과 물주기 기록이 Supabase에 저장됩니다.</p> : null}
+      {isDemo ? <p className="mt-4 rounded-lg border border-neutral-200 bg-white p-4 text-sm leading-6 text-neutral-500">로그인하면 식물과 물주기 기록이 Supabase에 저장됩니다.</p> : null}
       <section className="mt-4 space-y-2">
         <SettingRow icon={<Bell className="h-4 w-4" />} label="알림 시간" value={profile.notificationTime} />
         <SettingRow icon={<Lock className="h-4 w-4" />} label="공개 여부" value={profile.isPublic ? "공개" : "비공개"} />
@@ -40,8 +40,8 @@ export default function MyPage() {
 
 function SettingRow({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl bg-white p-4 shadow-[0_8px_25px_rgba(35,55,40,0.05)]">
-      <span className="text-leaf-700">{icon}</span>
+    <div className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-white p-4">
+      <span className="text-neutral-500">{icon}</span>
       <span className="flex-1 text-sm font-medium text-neutral-800">{label}</span>
       <span className="text-sm text-neutral-500">{value}</span>
     </div>

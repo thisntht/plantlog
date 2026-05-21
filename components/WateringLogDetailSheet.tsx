@@ -27,8 +27,8 @@ export function WateringLogDetailSheet({
   return (
     <BottomSheet title="기록 상세" onClose={onClose}>
       <div className="space-y-4">
-        <div className="rounded-xl bg-leaf-50 p-4">
-          <p className="text-sm text-leaf-700">{formatKoreanDate(log.wateredDate)}</p>
+        <div className="rounded-lg border border-neutral-200 bg-white p-4">
+          <p className="text-sm text-neutral-500">{formatKoreanDate(log.wateredDate)}</p>
           <h3 className="mt-1 text-lg font-semibold text-neutral-900">{plant.nickname}</h3>
         </div>
         <Info label="흙 상태" value={log.soilStatus ? soilLabels[log.soilStatus] : "기록 없음"} />

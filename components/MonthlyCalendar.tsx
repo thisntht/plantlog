@@ -19,7 +19,7 @@ export function MonthlyCalendar() {
 
   return (
     <>
-      <section className="rounded-2xl bg-white p-4 shadow-soft">
+      <section className="rounded-lg border border-neutral-200 bg-white p-4">
         <div className="mb-4 flex items-center justify-between">
           <button
             className="flex h-10 w-10 items-center justify-center rounded-lg text-neutral-600 hover:bg-neutral-100"
@@ -56,7 +56,7 @@ export function MonthlyCalendar() {
             const day = Number(bucket.date.slice(-2));
             return (
               <button
-                className="min-h-20 rounded-lg border border-neutral-100 bg-white p-1.5 text-left transition hover:border-leaf-200 hover:bg-leaf-50/50"
+                className="min-h-20 rounded-md border border-neutral-200 bg-white p-1.5 text-left transition hover:bg-neutral-50"
                 key={bucket.date}
                 type="button"
                 onClick={() => setSelected(bucket)}
@@ -125,7 +125,7 @@ function DateSheetContent({ bucket, plants, onAdd }: { bucket: DateBucket; plant
         </div>
       </section>
       <button
-        className="absolute bottom-[max(1.3rem,env(safe-area-inset-bottom))] right-5 flex h-12 w-12 items-center justify-center rounded-full bg-leaf-700 text-white shadow-soft"
+        className="absolute bottom-[max(1.3rem,env(safe-area-inset-bottom))] right-5 flex h-12 w-12 items-center justify-center rounded-full bg-neutral-900 text-white"
         type="button"
         aria-label="기록 추가"
         onClick={onAdd}
@@ -142,7 +142,7 @@ function LogGroup({ title, logs, plants }: { title: string; logs: WateringLog[];
       <h3 className="mb-2 text-sm font-semibold text-neutral-800">{title}</h3>
       <div className="space-y-2">
         {logs.map((log) => (
-          <div className="rounded-lg bg-leaf-50 px-3 py-2 text-sm font-medium text-leaf-900" key={log.id}>
+          <div className="rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm font-medium text-neutral-900" key={log.id}>
             {getPlantName(log, plants)}
           </div>
         ))}

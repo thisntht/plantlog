@@ -12,7 +12,7 @@ export function PlantAvatar({ name, imageUrl, size = "md" }: { name: string; ima
   }
 
   return (
-    <div className={`${sizeClass} flex items-center justify-center rounded-lg bg-leaf-100 text-leaf-700`}>
+    <div className={`${sizeClass} flex items-center justify-center rounded-md border border-neutral-200 bg-neutral-50 text-neutral-700`}>
       <Sprout aria-hidden className={size === "lg" ? "h-10 w-10" : "h-5 w-5"} />
     </div>
   );

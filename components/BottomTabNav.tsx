@@ -16,7 +16,7 @@ export function BottomTabNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-leaf-100/80 bg-white/90 px-4 pb-[max(0.7rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-10px_30px_rgba(35,55,40,0.06)] backdrop-blur">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white px-4 pb-[max(0.7rem,env(safe-area-inset-bottom))] pt-2">
       <div className="mx-auto grid max-w-md grid-cols-4 gap-1">
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -24,8 +24,8 @@ export function BottomTabNav() {
           return (
             <Link
               className={clsx(
-                "flex h-14 flex-col items-center justify-center gap-1 rounded-lg text-[0.72rem] font-medium transition",
-                active ? "bg-leaf-50 text-leaf-700" : "text-neutral-500 hover:bg-neutral-50"
+                "flex h-14 flex-col items-center justify-center gap-1 rounded-md text-[0.72rem] font-medium transition",
+                active ? "bg-neutral-100 text-neutral-950" : "text-neutral-500 hover:bg-neutral-50"
               )}
               href={tab.href}
               key={tab.href}

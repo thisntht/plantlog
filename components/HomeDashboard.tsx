@@ -24,27 +24,27 @@ export function HomeDashboard() {
     <>
       <div className="mb-3 flex justify-end">
         <Link
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-leaf-100 bg-white px-3 text-sm font-medium text-leaf-800 shadow-[0_8px_25px_rgba(35,55,40,0.05)] transition hover:bg-leaf-50"
+          className="inline-flex h-9 items-center gap-1.5 rounded-md border border-neutral-200 bg-white px-3 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
           href="/plants/new"
         >
           <Plus aria-hidden className="h-4 w-4" />
           새 식물 등록
         </Link>
       </div>
-      <section className="mb-6 rounded-2xl bg-white p-4 shadow-soft">
+      <section className="mb-6 rounded-lg border border-neutral-200 bg-white p-4">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-leaf-700">오늘 물줄 식물</p>
+            <p className="text-sm font-medium text-neutral-500">오늘 물줄 식물</p>
             <h2 className="mt-1 text-xl font-semibold text-neutral-900">{todayPlants.length}개를 확인하면 돼요</h2>
           </div>
-          <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-leaf-50 text-leaf-700">
+          <div className="flex h-11 w-11 items-center justify-center rounded-md border border-neutral-200 bg-neutral-50 text-neutral-700">
             <Droplets aria-hidden className="h-5 w-5" />
           </div>
         </div>
         {isDemo ? <p className="mb-3 rounded-lg bg-neutral-50 px-3 py-2 text-sm text-neutral-500">로그인하면 내 식물 데이터가 Supabase에 저장되고 기기 간 동기화됩니다.</p> : null}
         <div className="space-y-3">
           {todayPlants.map((plant) => (
-            <article className="rounded-xl border border-leaf-100 bg-leaf-50/50 p-3" key={plant.id}>
+            <article className="rounded-lg border border-neutral-200 bg-white p-3" key={plant.id}>
               <div className="flex items-center gap-3">
                 <PlantAvatar name={plant.nickname} imageUrl={plant.coverImageUrl} />
                 <div className="min-w-0 flex-1">
@@ -54,7 +54,7 @@ export function HomeDashboard() {
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <button
-                  className="flex h-10 items-center justify-center gap-2 rounded-lg bg-leaf-700 text-sm font-semibold text-white"
+                  className="flex h-10 items-center justify-center gap-2 rounded-md bg-neutral-900 text-sm font-semibold text-white"
                   type="button"
                   onClick={() => setFormPlant(plant)}
                 >
@@ -62,7 +62,7 @@ export function HomeDashboard() {
                   물 줬어요
                 </button>
                 <button
-                  className="flex h-10 items-center justify-center gap-2 rounded-lg border border-leaf-200 bg-white text-sm font-medium text-leaf-800"
+                  className="flex h-10 items-center justify-center gap-2 rounded-md border border-neutral-200 bg-white text-sm font-medium text-neutral-700"
                   type="button"
                   onClick={() => setSnoozePlant(plant)}
                 >
@@ -122,7 +122,7 @@ export function HomeDashboard() {
 function SectionTitle({ icon, title }: { icon: ReactNode; title: string }) {
   return (
     <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-neutral-800">
-      <span className="text-leaf-700">{icon}</span>
+      <span className="text-neutral-500">{icon}</span>
       {title}
     </div>
   );
@@ -130,7 +130,7 @@ function SectionTitle({ icon, title }: { icon: ReactNode; title: string }) {
 
 function CompactPlantRow({ plant, meta }: { plant: Plant; meta: string }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl bg-white p-3 shadow-[0_8px_25px_rgba(35,55,40,0.05)]">
+    <div className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-white p-3">
       <PlantAvatar name={plant.nickname} imageUrl={plant.coverImageUrl} size="sm" />
       <span className="min-w-0 flex-1 truncate text-sm font-medium text-neutral-900">{plant.nickname}</span>
       <span className="text-sm text-neutral-500">{meta}</span>
@@ -139,20 +139,20 @@ function CompactPlantRow({ plant, meta }: { plant: Plant; meta: string }) {
 }
 
 function EmptyState({ text }: { text: string }) {
-  return <p className="rounded-xl bg-white/70 p-4 text-sm leading-6 text-neutral-500">{text}</p>;
+  return <p className="rounded-lg border border-neutral-200 bg-white p-4 text-sm leading-6 text-neutral-500">{text}</p>;
 }
 
 function SnoozeSheet({ plant, onClose, onSnooze }: { plant: Plant; onClose: () => void; onSnooze: (days: number) => Promise<void> }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end bg-neutral-950/25 px-3" role="dialog" aria-modal="true">
       <button className="absolute inset-0 cursor-default" aria-label="닫기" onClick={onClose} />
-      <section className="safe-bottom relative mx-auto w-full max-w-md rounded-t-2xl bg-white px-5 pt-5 shadow-soft">
+      <section className="safe-bottom relative mx-auto w-full max-w-md rounded-t-lg border border-neutral-200 bg-white px-5 pt-5">
         <h2 className="text-lg font-semibold text-neutral-900">{plant.nickname}</h2>
         <p className="mt-2 text-sm leading-6 text-neutral-500">물주기 기록은 만들지 않고 홈 표시와 알림만 잠시 미룹니다.</p>
         <div className="mt-5 grid grid-cols-3 gap-2">
           {[1, 2, 3].map((day) => (
             <button
-              className="h-12 rounded-lg bg-leaf-50 text-sm font-semibold text-leaf-800"
+              className="h-12 rounded-md border border-neutral-200 bg-white text-sm font-semibold text-neutral-800"
               key={day}
               type="button"
               onClick={() => void onSnooze(day)}

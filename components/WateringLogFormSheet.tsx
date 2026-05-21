@@ -83,7 +83,7 @@ export function WateringLogFormSheet({
         <label className="block">
           <span className="mb-2 block text-sm font-medium text-neutral-700">식물</span>
           <select
-            className="h-12 w-full rounded-lg border border-neutral-200 bg-white px-3 text-base text-neutral-900 outline-none focus:border-leaf-400"
+            className="h-12 w-full rounded-md border border-neutral-200 bg-white px-3 text-base text-neutral-900 outline-none focus:border-neutral-500"
             value={plantId}
             onChange={(event) => setPlantId(event.target.value)}
           >
@@ -98,7 +98,7 @@ export function WateringLogFormSheet({
         <label className="block">
           <span className="mb-2 block text-sm font-medium text-neutral-700">날짜</span>
           <input
-            className="h-12 w-full rounded-lg border border-neutral-200 bg-white px-3 text-base text-neutral-900 outline-none focus:border-leaf-400"
+            className="h-12 w-full rounded-md border border-neutral-200 bg-white px-3 text-base text-neutral-900 outline-none focus:border-neutral-500"
             type="date"
             value={date}
             onChange={(event) => setDate(event.target.value)}
@@ -116,7 +116,7 @@ export function WateringLogFormSheet({
               return (
                 <button
                   className={`rounded-full border px-3 py-2 text-sm transition ${
-                    active ? "border-leaf-500 bg-leaf-50 text-leaf-800" : "border-neutral-200 text-neutral-600"
+                    active ? "border-neutral-900 bg-neutral-100 text-neutral-950" : "border-neutral-200 text-neutral-600"
                   }`}
                   key={option.value}
                   type="button"
@@ -132,7 +132,7 @@ export function WateringLogFormSheet({
         <label className="block">
           <span className="mb-2 block text-sm font-medium text-neutral-700">메모</span>
           <textarea
-            className="min-h-24 w-full resize-none rounded-lg border border-neutral-200 bg-white p-3 text-base outline-none focus:border-leaf-400"
+            className="min-h-24 w-full resize-none rounded-md border border-neutral-200 bg-white p-3 text-base outline-none focus:border-neutral-500"
             placeholder="오늘 관찰한 점을 가볍게 남겨보세요."
             value={memo}
             onChange={(event) => setMemo(event.target.value)}
@@ -151,7 +151,7 @@ export function WateringLogFormSheet({
         {error ? <p className="text-sm text-red-500">{error}</p> : null}
 
         <button
-          className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-leaf-700 text-sm font-semibold text-white transition hover:bg-leaf-800"
+          className="flex h-12 w-full items-center justify-center gap-2 rounded-md bg-neutral-900 text-sm font-semibold text-white transition hover:bg-neutral-800"
           type="button"
           onClick={save}
         >
@@ -181,7 +181,7 @@ function ChoiceGroup<T extends string>({
         {options.map((option) => (
           <button
             className={`h-10 rounded-lg border text-sm transition ${
-              selected === option.value ? "border-leaf-500 bg-leaf-50 text-leaf-800" : "border-neutral-200 text-neutral-600"
+              selected === option.value ? "border-neutral-900 bg-neutral-100 text-neutral-950" : "border-neutral-200 text-neutral-600"
             }`}
             key={option.value}
             type="button"
