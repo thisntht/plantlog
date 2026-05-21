@@ -6,11 +6,13 @@ import { X } from "lucide-react";
 export function BottomSheet({
   title,
   headerAction,
+  headerLeft,
   children,
   onClose
 }: {
   title?: string;
   headerAction?: ReactNode;
+  headerLeft?: ReactNode;
   children: ReactNode;
   onClose: () => void;
 }) {
@@ -20,7 +22,10 @@ export function BottomSheet({
       <section className="safe-bottom relative mx-auto w-full max-w-md rounded-t-lg border border-neutral-200 bg-white px-5 pt-4">
         <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-neutral-200" />
         <div className="mb-4 flex min-h-9 items-center justify-between gap-4">
-          {title ? <h2 className="text-lg font-semibold text-neutral-900">{title}</h2> : <div />}
+          <div className="flex items-center gap-1">
+            {headerLeft}
+            {title ? <h2 className="ml-1 text-lg font-semibold text-neutral-900">{title}</h2> : null}
+          </div>
           <div className="flex items-center gap-1">
             {headerAction}
             <button
