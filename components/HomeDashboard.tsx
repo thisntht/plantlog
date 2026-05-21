@@ -41,7 +41,14 @@ export function HomeDashboard() {
             <Droplets aria-hidden className="h-5 w-5" />
           </div>
         </div>
-        {isDemo ? <p className="mb-3 rounded-lg bg-neutral-50 px-3 py-2 text-sm text-neutral-500">로그인하면 내 식물 데이터가 Supabase에 저장되고 기기 간 동기화됩니다.</p> : null}
+        {isDemo ? (
+          <p className="mb-3 rounded-lg bg-neutral-50 px-3 py-2 text-sm text-neutral-500">
+            <Link className="font-medium text-neutral-900 underline underline-offset-4" href="/login">
+              로그인
+            </Link>
+            하면 내 식물 데이터가 저장되고 기기 간 동기화됩니다.
+          </p>
+        ) : null}
         <div className="space-y-3">
           {todayPlants.map((plant) => (
             <article className="rounded-lg border border-neutral-200 bg-white p-3" key={plant.id}>

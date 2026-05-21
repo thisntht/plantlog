@@ -121,12 +121,12 @@ function LogList({ logs, onSelect }: { logs: WateringLog[]; onSelect: (log: Wate
 
 function PlantMiniCalendar({ logs, onSelect }: { logs: WateringLog[]; onSelect: (log: WateringLog) => void }) {
   return (
-    <div className="grid grid-cols-7 gap-2 rounded-lg border border-neutral-200 bg-white p-4">
+    <div className="grid w-full max-w-full grid-cols-7 gap-1 overflow-hidden rounded-lg border border-neutral-200 bg-white p-2">
       {Array.from({ length: 31 }).map((_, index) => {
         const day = index + 1;
         const log = logs.find((item) => Number(item.wateredDate.slice(-2)) === day);
         return (
-          <button className="flex aspect-square flex-col items-center justify-center rounded-md text-sm text-neutral-600 hover:bg-neutral-50" key={day} type="button" onClick={() => log && onSelect(log)}>
+          <button className="flex aspect-square min-w-0 flex-col items-center justify-center rounded-md text-sm text-neutral-600 hover:bg-neutral-50" key={day} type="button" onClick={() => log && onSelect(log)}>
             {day}
             {log ? <span className="mt-1 h-1.5 w-1.5 rounded-full bg-neutral-900" /> : <span className="mt-1 h-1.5 w-1.5" />}
           </button>

@@ -16,7 +16,7 @@ export default function LoginPage() {
         <p className="mt-3 text-sm leading-6 text-neutral-500">식물을 압박감 없이 관찰하고, 물주기 패턴을 조용히 쌓아가는 개인용 기록 앱.</p>
       </div>
       {user ? <p className="mb-4 rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-700">이미 로그인되어 있어요.</p> : null}
-      {isDemo ? <p className="mb-4 rounded-lg bg-white px-3 py-2 text-sm leading-6 text-neutral-500">Supabase URL과 Publishable key가 GitHub Variables에 들어가면 Google 로그인으로 데이터를 저장할 수 있습니다.</p> : null}
+      {isDemo ? <p className="mb-4 rounded-lg bg-white px-3 py-2 text-sm leading-6 text-neutral-500">Google 로그인으로 내 식물과 기록을 저장할 수 있습니다.</p> : null}
       <div className="space-y-3">
         <button
           className="h-12 w-full rounded-md border border-neutral-200 bg-white text-sm font-semibold text-neutral-800"

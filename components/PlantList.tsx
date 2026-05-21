@@ -25,7 +25,7 @@ export function PlantList() {
 
   return (
     <>
-      {isDemo ? <p className="mb-4 rounded-lg border border-neutral-200 bg-white p-4 text-sm leading-6 text-neutral-500">로그인 전에는 샘플 식물 목록이 보입니다. 로그인 후 추가한 식물은 Supabase에 저장됩니다.</p> : null}
+      {isDemo ? <p className="mb-4 rounded-lg border border-neutral-200 bg-white p-4 text-sm leading-6 text-neutral-500">로그인 전에는 샘플 식물 목록이 보입니다. 로그인 후 추가한 식물은 저장됩니다.</p> : null}
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="inline-flex rounded-md border border-neutral-200 bg-white p-1">
           <SortButton active={sort === "needs"} onClick={() => setSort("needs")} label="관리 필요순" />
