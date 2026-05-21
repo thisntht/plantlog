@@ -20,7 +20,7 @@ export function PlantList() {
       if (sort === "name") return a.nickname.localeCompare(b.nickname, "ko");
       return getNextWateringDate(a, wateringLogs).localeCompare(getNextWateringDate(b, wateringLogs));
     });
-  }, [sort]);
+  }, [plants, sort, wateringLogs]);
   const staticPlantIds = useMemo(() => new Set(samplePlants.map((plant) => plant.id)), []);
 
   return (

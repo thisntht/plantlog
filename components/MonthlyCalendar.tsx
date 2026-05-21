@@ -18,8 +18,8 @@ export function MonthlyCalendar() {
   const [adding, setAdding] = useState(false);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [showMonthPicker, setShowMonthPicker] = useState(false);
-  const wheelLockRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
-  const buckets = useMemo(() => buildMonthBuckets(month, plants, wateringLogs), [month]);
+  const wheelLockRef = useRef<number | null>(null);
+  const buckets = useMemo(() => buildMonthBuckets(month, plants, wateringLogs), [month, plants, wateringLogs]);
   const leading = buckets[0] ? getDay(new Date(`${buckets[0].date}T00:00:00`)) : 0;
   const trailing = (7 - ((leading + buckets.length) % 7)) % 7;
   const calendarCells: Array<DateBucket | null> = [
