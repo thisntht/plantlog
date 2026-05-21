@@ -1,0 +1,10 @@
+{
+  "name": "PlantLog",
+  "short_name": "PlantLog",
+  "description": "개인용 식물 물주기 기록 앱",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fbfcf9",
+  "theme_color": "#f4faf5",
+  "icons": []
+}

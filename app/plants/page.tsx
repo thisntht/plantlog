@@ -1,0 +1,12 @@
+import { AppShell } from "@/components/AppShell";
+import { PageHeader } from "@/components/PageHeader";
+import { PlantList } from "@/components/PlantList";
+
+export default function PlantsPage() {
+  return (
+    <AppShell>
+      <PageHeader title="식물" description="식물 정보는 작게, 기록 흐름은 편하게 볼 수 있게 정리했어요." />
+      <PlantList />
+    </AppShell>
+  );
+}

@@ -1,0 +1,148 @@
+"use client";
+
+import type { ReactNode } from "react";
+import { useState } from "react";
+import { CalendarClock, Droplets, Eye, Leaf } from "lucide-react";
+import { PlantAvatar } from "@/components/PlantAvatar";
+import { WateringLogFormSheet } from "@/components/WateringLogFormSheet";
+import { plants, plantSnoozes, wateringLogs } from "@/lib/sample-data";
+import { todayISO } from "@/lib/date";
+import { getNextWateringDate, getTodayPlants, getUncheckedPlants, getUpcomingPlants } from "@/lib/watering";
+import type { Plant } from "@/lib/types";
+
+export function HomeDashboard() {
+  const today = todayISO();
+  const todayPlants = getTodayPlants(plants, wateringLogs, plantSnoozes, today);
+  const upcoming = getUpcomingPlants(plants, wateringLogs, today);
+  const unchecked = getUncheckedPlants(plants, wateringLogs, today);
+  const [formPlant, setFormPlant] = useState<Plant | null>(null);
+  const [snoozePlant, setSnoozePlant] = useState<Plant | null>(null);
+
+  return (
+    <>
+      <section className="mb-6 rounded-2xl bg-white p-4 shadow-soft">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-leaf-700">오늘 물줄 식물</p>
+            <h2 className="mt-1 text-xl font-semibold text-neutral-900">{todayPlants.length}개를 확인하면 돼요</h2>
+          </div>
+          <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-leaf-50 text-leaf-700">
+            <Droplets aria-hidden className="h-5 w-5" />
+          </div>
+        </div>
+        <div className="space-y-3">
+          {todayPlants.map((plant) => (
+            <article className="rounded-xl border border-leaf-100 bg-leaf-50/50 p-3" key={plant.id}>
+              <div className="flex items-center gap-3">
+                <PlantAvatar name={plant.nickname} imageUrl={plant.coverImageUrl} />
+                <div className="min-w-0 flex-1">
+                  <h3 className="truncate font-medium text-neutral-900">{plant.nickname}</h3>
+                  <p className="text-sm text-neutral-500">예정일 {getNextWateringDate(plant, wateringLogs)}</p>
+                </div>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <button
+                  className="flex h-10 items-center justify-center gap-2 rounded-lg bg-leaf-700 text-sm font-semibold text-white"
+                  type="button"
+                  onClick={() => setFormPlant(plant)}
+                >
+                  <Droplets aria-hidden className="h-4 w-4" />
+                  물 줬어요
+                </button>
+                <button
+                  className="flex h-10 items-center justify-center gap-2 rounded-lg border border-leaf-200 bg-white text-sm font-medium text-leaf-800"
+                  type="button"
+                  onClick={() => setSnoozePlant(plant)}
+                >
+                  <Eye aria-hidden className="h-4 w-4" />
+                  지켜볼게요
+                </button>
+              </div>
+            </article>
+          ))}
+          {todayPlants.length === 0 ? <EmptyState text="오늘은 정해진 물주기가 없어요. 가볍게 둘러봐도 충분해요." /> : null}
+        </div>
+      </section>
+
+      <section className="mb-6">
+        <SectionTitle icon={<CalendarClock className="h-4 w-4" />} title="곧 물줄 식물" />
+        <div className="space-y-2">
+          {upcoming.map(({ plant, days }) => (
+            <CompactPlantRow key={plant.id} plant={plant} meta={days === 1 ? "내일" : "2일 뒤"} />
+          ))}
+          {upcoming.length === 0 ? <EmptyState text="1~2일 안에 예정된 식물이 없어요." /> : null}
+        </div>
+      </section>
+
+      <section>
+        <SectionTitle icon={<Leaf className="h-4 w-4" />} title="오래 확인하지 않은 식물" />
+        <div className="space-y-2">
+          {unchecked.map(({ plant, daysSince }) => (
+            <CompactPlantRow key={plant.id} plant={plant} meta={`${daysSince}일`} />
+          ))}
+          {unchecked.length === 0 ? <EmptyState text="최근 기록 흐름이 차분히 이어지고 있어요." /> : null}
+        </div>
+      </section>
+
+      {formPlant ? (
+        <WateringLogFormSheet
+          plants={plants}
+          selectedPlantId={formPlant.id}
+          selectedDate={today}
+          onClose={() => setFormPlant(null)}
+        />
+      ) : null}
+
+      {snoozePlant ? (
+        <SnoozeSheet plant={snoozePlant} onClose={() => setSnoozePlant(null)} />
+      ) : null}
+    </>
+  );
+}
+
+function SectionTitle({ icon, title }: { icon: ReactNode; title: string }) {
+  return (
+    <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-neutral-800">
+      <span className="text-leaf-700">{icon}</span>
+      {title}
+    </div>
+  );
+}
+
+function CompactPlantRow({ plant, meta }: { plant: Plant; meta: string }) {
+  return (
+    <div className="flex items-center gap-3 rounded-xl bg-white p-3 shadow-[0_8px_25px_rgba(35,55,40,0.05)]">
+      <PlantAvatar name={plant.nickname} imageUrl={plant.coverImageUrl} size="sm" />
+      <span className="min-w-0 flex-1 truncate text-sm font-medium text-neutral-900">{plant.nickname}</span>
+      <span className="text-sm text-neutral-500">{meta}</span>
+    </div>
+  );
+}
+
+function EmptyState({ text }: { text: string }) {
+  return <p className="rounded-xl bg-white/70 p-4 text-sm leading-6 text-neutral-500">{text}</p>;
+}
+
+function SnoozeSheet({ plant, onClose }: { plant: Plant; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end bg-neutral-950/25 px-3" role="dialog" aria-modal="true">
+      <button className="absolute inset-0 cursor-default" aria-label="닫기" onClick={onClose} />
+      <section className="safe-bottom relative mx-auto w-full max-w-md rounded-t-2xl bg-white px-5 pt-5 shadow-soft">
+        <h2 className="text-lg font-semibold text-neutral-900">{plant.nickname}</h2>
+        <p className="mt-2 text-sm leading-6 text-neutral-500">물주기 기록은 만들지 않고 홈 표시와 알림만 잠시 미룹니다.</p>
+        <div className="mt-5 grid grid-cols-3 gap-2">
+          {[1, 2, 3].map((day) => (
+            <button
+              className="h-12 rounded-lg bg-leaf-50 text-sm font-semibold text-leaf-800"
+              key={day}
+              type="button"
+              onClick={onClose}
+            >
+              {day}일 뒤
+            </button>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
