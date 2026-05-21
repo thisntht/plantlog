@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { Bell, Lock, UserRound } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
@@ -10,6 +11,7 @@ import { profile } from "@/lib/sample-data";
 
 export default function MyPage() {
   const { user, signOut, isDemo, notificationTime, updateNotificationTime } = usePlantData();
+  const [selectedHour, selectedMinute] = notificationTime.split(":");
 
   return (
     <AppShell>
@@ -34,20 +36,11 @@ export default function MyPage() {
         </div>
       ) : null}
       <section className="mt-4 space-y-2">
-        <div className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-white p-4">
-          <span className="text-neutral-500">
-            <Bell className="h-4 w-4" />
-          </span>
-          <label className="flex flex-1 items-center justify-between gap-3 text-sm font-medium text-neutral-800">
-            알림 시간
-            <input
-              className="h-9 rounded-md border border-neutral-200 bg-white px-2 text-sm text-neutral-700 outline-none focus:border-neutral-500"
-              type="time"
-              value={notificationTime}
-              onChange={(event) => void updateNotificationTime(event.target.value)}
-            />
-          </label>
-        </div>
+        <NotificationTimePicker
+          hour={selectedHour ?? "20"}
+          minute={selectedMinute ?? "00"}
+          onChange={(time) => void updateNotificationTime(time)}
+        />
         <SettingRow icon={<Lock className="h-4 w-4" />} label="공개 여부" value={profile.isPublic ? "공개" : "비공개"} />
       </section>
       {user ? (
@@ -56,6 +49,79 @@ export default function MyPage() {
         </button>
       ) : null}
     </AppShell>
+  );
+}
+
+function NotificationTimePicker({
+  hour,
+  minute,
+  onChange
+}: {
+  hour: string;
+  minute: string;
+  onChange: (time: string) => void;
+}) {
+  const hours = useMemo(() => Array.from({ length: 24 }, (_, index) => String(index).padStart(2, "0")), []);
+  const minutes = useMemo(() => Array.from({ length: 12 }, (_, index) => String(index * 5).padStart(2, "0")), []);
+
+  const selectHour = (nextHour: string) => onChange(`${nextHour}:${minute}`);
+  const selectMinute = (nextMinute: string) => onChange(`${hour}:${nextMinute}`);
+
+  return (
+    <div className="rounded-lg border border-neutral-200 bg-white p-4">
+      <div className="mb-3 flex items-center gap-3">
+        <span className="text-neutral-500">
+          <Bell className="h-4 w-4" />
+        </span>
+        <div className="flex-1">
+          <p className="text-sm font-medium text-neutral-800">알림 시간</p>
+          <p className="mt-0.5 text-xs text-neutral-400">24시간 기준</p>
+        </div>
+        <span className="font-mono text-sm font-medium text-neutral-900">
+          {hour}:{minute}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+        <TimeColumn label="시" options={hours} selected={hour} onSelect={selectHour} />
+        <span className="pt-6 text-sm font-semibold text-neutral-300">:</span>
+        <TimeColumn label="분" options={minutes} selected={minute} onSelect={selectMinute} />
+      </div>
+    </div>
+  );
+}
+
+function TimeColumn({
+  label,
+  options,
+  selected,
+  onSelect
+}: {
+  label: string;
+  options: string[];
+  selected: string;
+  onSelect: (value: string) => void;
+}) {
+  return (
+    <div>
+      <p className="mb-2 text-center text-xs font-medium text-neutral-400">{label}</p>
+      <div className="h-28 overflow-y-auto rounded-md border border-neutral-200 bg-neutral-50 p-1">
+        <div className="space-y-1">
+          {options.map((option) => (
+            <button
+              className={`h-8 w-full rounded text-sm transition ${
+                selected === option ? "bg-white font-semibold text-neutral-950 shadow-[0_0_0_1px_rgba(212,212,212,1)]" : "text-neutral-500 hover:bg-white"
+              }`}
+              key={option}
+              type="button"
+              onClick={() => onSelect(option)}
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
