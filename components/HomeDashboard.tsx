@@ -2,7 +2,8 @@
 
 import type { ReactNode } from "react";
 import { useState } from "react";
-import { CalendarClock, Droplets, Eye, Leaf } from "lucide-react";
+import Link from "next/link";
+import { CalendarClock, Droplets, Eye, Leaf, Plus } from "lucide-react";
 import { usePlantData } from "@/components/AppProviders";
 import { PlantAvatar } from "@/components/PlantAvatar";
 import { WateringLogFormSheet } from "@/components/WateringLogFormSheet";
@@ -21,6 +22,15 @@ export function HomeDashboard() {
 
   return (
     <>
+      <div className="mb-3 flex justify-end">
+        <Link
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-leaf-100 bg-white px-3 text-sm font-medium text-leaf-800 shadow-[0_8px_25px_rgba(35,55,40,0.05)] transition hover:bg-leaf-50"
+          href="/plants/new"
+        >
+          <Plus aria-hidden className="h-4 w-4" />
+          새 식물 등록
+        </Link>
+      </div>
       <section className="mb-6 rounded-2xl bg-white p-4 shadow-soft">
         <div className="mb-4 flex items-center justify-between">
           <div>
