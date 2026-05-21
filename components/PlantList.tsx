@@ -57,6 +57,11 @@ export function PlantList() {
             </Link>
           );
         })}
+        {sortedPlants.length === 0 ? (
+          <div className="rounded-xl bg-white p-5 text-sm leading-6 text-neutral-500 shadow-[0_8px_25px_rgba(35,55,40,0.05)]">
+            아직 등록한 식물이 없어요. 오른쪽 위 + 버튼으로 첫 식물을 추가해보세요.
+          </div>
+        ) : null}
       </div>
     </>
   );

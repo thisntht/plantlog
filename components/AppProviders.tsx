@@ -81,9 +81,9 @@ export function AppProviders({ children }: { children: ReactNode }) {
       supabase.from("plant_snoozes").select("*")
     ]);
 
-    if (plantsResult.data) setPlants(plantsResult.data.map(mapPlant));
-    if (logsResult.data) setWateringLogs(logsResult.data.map(mapWateringLog));
-    if (snoozesResult.data) setPlantSnoozes(snoozesResult.data.map(mapPlantSnooze));
+    setPlants(plantsResult.data ? plantsResult.data.map(mapPlant) : []);
+    setWateringLogs(logsResult.data ? logsResult.data.map(mapWateringLog) : []);
+    setPlantSnoozes(snoozesResult.data ? snoozesResult.data.map(mapPlantSnooze) : []);
     setLoading(false);
   }, [supabase]);
 
