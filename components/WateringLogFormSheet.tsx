@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Camera, Check } from "lucide-react";
 import { BottomSheet } from "@/components/BottomSheet";
+import { usePlantData } from "@/components/AppProviders";
 import type { Plant, PlantCondition, SoilStatus, WaterAmount } from "@/lib/types";
 
 const soilOptions: { value: SoilStatus; label: string }[] = [
@@ -45,17 +46,35 @@ export function WateringLogFormSheet({
   const [conditions, setConditions] = useState<PlantCondition[]>([]);
   const [memo, setMemo] = useState("");
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
+  const { addWateringLog, isDemo, user } = usePlantData();
 
   const toggleCondition = (value: PlantCondition) => {
     setConditions((current) => (current.includes(value) ? current.filter((item) => item !== value) : [...current, value]));
   };
 
-  const save = () => {
-    setSaved(true);
-    window.setTimeout(() => {
+  const save = async () => {
+    if (!plantId || !date) return;
+    setError("");
+
+    try {
+      if (user) {
+        await addWateringLog({
+          plantId,
+          wateredDate: date,
+          soilStatus: soil,
+          waterAmount: amount,
+          plantConditions: conditions,
+          memo
+        });
+      }
+
+      setSaved(true);
       onSaved?.();
       onClose();
-    }, 450);
+    } catch {
+      setError("저장하지 못했어요. 잠시 뒤 다시 시도해주세요.");
+    }
   };
 
   return (
@@ -127,6 +146,9 @@ export function WateringLogFormSheet({
           <Camera aria-hidden className="h-4 w-4" />
           사진 최대 5장
         </button>
+
+        {isDemo ? <p className="text-sm leading-6 text-neutral-500">로그인 전에는 화면 확인용으로만 동작합니다. 저장하려면 Google로 로그인해주세요.</p> : null}
+        {error ? <p className="text-sm text-red-500">{error}</p> : null}
 
         <button
           className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-leaf-700 text-sm font-semibold text-white transition hover:bg-leaf-800"

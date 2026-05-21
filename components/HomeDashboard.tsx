@@ -3,14 +3,15 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { CalendarClock, Droplets, Eye, Leaf } from "lucide-react";
+import { usePlantData } from "@/components/AppProviders";
 import { PlantAvatar } from "@/components/PlantAvatar";
 import { WateringLogFormSheet } from "@/components/WateringLogFormSheet";
-import { plants, plantSnoozes, wateringLogs } from "@/lib/sample-data";
 import { todayISO } from "@/lib/date";
 import { getNextWateringDate, getTodayPlants, getUncheckedPlants, getUpcomingPlants } from "@/lib/watering";
 import type { Plant } from "@/lib/types";
 
 export function HomeDashboard() {
+  const { plants, wateringLogs, plantSnoozes, isDemo, snoozePlant: saveSnooze } = usePlantData();
   const today = todayISO();
   const todayPlants = getTodayPlants(plants, wateringLogs, plantSnoozes, today);
   const upcoming = getUpcomingPlants(plants, wateringLogs, today);
@@ -30,6 +31,7 @@ export function HomeDashboard() {
             <Droplets aria-hidden className="h-5 w-5" />
           </div>
         </div>
+        {isDemo ? <p className="mb-3 rounded-lg bg-neutral-50 px-3 py-2 text-sm text-neutral-500">로그인하면 내 식물 데이터가 Supabase에 저장되고 기기 간 동기화됩니다.</p> : null}
         <div className="space-y-3">
           {todayPlants.map((plant) => (
             <article className="rounded-xl border border-leaf-100 bg-leaf-50/50 p-3" key={plant.id}>
@@ -94,7 +96,14 @@ export function HomeDashboard() {
       ) : null}
 
       {snoozePlant ? (
-        <SnoozeSheet plant={snoozePlant} onClose={() => setSnoozePlant(null)} />
+        <SnoozeSheet
+          plant={snoozePlant}
+          onClose={() => setSnoozePlant(null)}
+          onSnooze={async (days) => {
+            await saveSnooze(snoozePlant.id, days);
+            setSnoozePlant(null);
+          }}
+        />
       ) : null}
     </>
   );
@@ -123,7 +132,7 @@ function EmptyState({ text }: { text: string }) {
   return <p className="rounded-xl bg-white/70 p-4 text-sm leading-6 text-neutral-500">{text}</p>;
 }
 
-function SnoozeSheet({ plant, onClose }: { plant: Plant; onClose: () => void }) {
+function SnoozeSheet({ plant, onClose, onSnooze }: { plant: Plant; onClose: () => void; onSnooze: (days: number) => Promise<void> }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end bg-neutral-950/25 px-3" role="dialog" aria-modal="true">
       <button className="absolute inset-0 cursor-default" aria-label="닫기" onClick={onClose} />
@@ -136,7 +145,7 @@ function SnoozeSheet({ plant, onClose }: { plant: Plant; onClose: () => void }) 
               className="h-12 rounded-lg bg-leaf-50 text-sm font-semibold text-leaf-800"
               key={day}
               type="button"
-              onClick={onClose}
+              onClick={() => void onSnooze(day)}
             >
               {day}일 뒤
             </button>

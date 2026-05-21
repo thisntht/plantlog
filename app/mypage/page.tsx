@@ -1,10 +1,15 @@
+"use client";
+
 import type { ReactNode } from "react";
 import { Bell, Lock, UserRound } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
+import { usePlantData } from "@/components/AppProviders";
 import { profile } from "@/lib/sample-data";
 
 export default function MyPage() {
+  const { user, signOut, isDemo } = usePlantData();
+
   return (
     <AppShell>
       <PageHeader title="마이페이지" description="알림 시간과 개인 공개 상태를 관리합니다." />
@@ -14,15 +19,21 @@ export default function MyPage() {
             <UserRound aria-hidden className="h-5 w-5" />
           </div>
           <div>
-            <h2 className="font-semibold text-neutral-900">{profile.displayName}</h2>
-            <p className="text-sm text-neutral-500">개인 비공개 모드</p>
+            <h2 className="font-semibold text-neutral-900">{user?.email ?? profile.displayName}</h2>
+            <p className="text-sm text-neutral-500">{user ? "Supabase 동기화 중" : "샘플 데이터 모드"}</p>
           </div>
         </div>
       </section>
+      {isDemo ? <p className="mt-4 rounded-xl bg-white p-4 text-sm leading-6 text-neutral-500 shadow-[0_8px_25px_rgba(35,55,40,0.05)]">로그인하면 식물과 물주기 기록이 Supabase에 저장됩니다.</p> : null}
       <section className="mt-4 space-y-2">
         <SettingRow icon={<Bell className="h-4 w-4" />} label="알림 시간" value={profile.notificationTime} />
         <SettingRow icon={<Lock className="h-4 w-4" />} label="공개 여부" value={profile.isPublic ? "공개" : "비공개"} />
       </section>
+      {user ? (
+        <button className="mt-4 h-12 w-full rounded-lg bg-neutral-900 text-sm font-semibold text-white" type="button" onClick={() => void signOut()}>
+          로그아웃
+        </button>
+      ) : null}
     </AppShell>
   );
 }

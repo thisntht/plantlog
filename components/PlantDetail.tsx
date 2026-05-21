@@ -3,39 +3,41 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { CalendarDays, Droplets, ImageIcon, List, Settings2 } from "lucide-react";
+import { usePlantData } from "@/components/AppProviders";
 import { PlantAvatar } from "@/components/PlantAvatar";
 import { WateringLogDetailSheet } from "@/components/WateringLogDetailSheet";
 import { WateringLogFormSheet } from "@/components/WateringLogFormSheet";
 import { formatKoreanDate, todayISO } from "@/lib/date";
-import { plants, wateringLogs } from "@/lib/sample-data";
 import { getLastWateredDate, getPlantLogs, getWateringIntervalSuggestion } from "@/lib/watering";
 import type { Plant, WateringLog } from "@/lib/types";
 
 type Tab = "list" | "calendar" | "album";
 
 export function PlantDetail({ plant }: { plant: Plant }) {
+  const { plants, wateringLogs } = usePlantData();
   const [tab, setTab] = useState<Tab>("list");
   const [selectedLog, setSelectedLog] = useState<WateringLog | null>(null);
   const [adding, setAdding] = useState(false);
-  const logs = getPlantLogs(plant.id, wateringLogs);
-  const lastWatered = getLastWateredDate(plant.id, wateringLogs);
-  const suggestion = getWateringIntervalSuggestion(plant, wateringLogs);
+  const activePlant = plants.find((item) => item.id === plant.id) ?? plant;
+  const logs = getPlantLogs(activePlant.id, wateringLogs);
+  const lastWatered = getLastWateredDate(activePlant.id, wateringLogs);
+  const suggestion = getWateringIntervalSuggestion(activePlant, wateringLogs);
 
   return (
     <>
       <section className="mb-5 rounded-2xl bg-white p-4 shadow-soft">
         <div className="flex gap-4">
-          <PlantAvatar name={plant.nickname} imageUrl={plant.coverImageUrl} size="lg" />
+          <PlantAvatar name={activePlant.nickname} imageUrl={activePlant.coverImageUrl} size="lg" />
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-2xl font-semibold text-neutral-900">{plant.nickname}</h1>
-            <p className="mt-1 truncate text-sm text-neutral-500">{plant.scientificName ?? plant.plantType ?? "식물"}</p>
+            <h1 className="truncate text-2xl font-semibold text-neutral-900">{activePlant.nickname}</h1>
+            <p className="mt-1 truncate text-sm text-neutral-500">{activePlant.scientificName ?? activePlant.plantType ?? "식물"}</p>
             <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
-              <InfoPill label="주기" value={`${plant.wateringIntervalDays}일`} />
+              <InfoPill label="주기" value={`${activePlant.wateringIntervalDays}일`} />
               <InfoPill label="최근" value={lastWatered ? formatKoreanDate(lastWatered) : "없음"} />
             </div>
           </div>
         </div>
-        <p className="mt-4 text-sm leading-6 text-neutral-500">{plant.memo}</p>
+        <p className="mt-4 text-sm leading-6 text-neutral-500">{activePlant.memo}</p>
         <button
           className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-leaf-700 text-sm font-semibold text-white"
           type="button"
@@ -76,8 +78,8 @@ export function PlantDetail({ plant }: { plant: Plant }) {
       {tab === "calendar" ? <PlantMiniCalendar logs={logs} onSelect={setSelectedLog} /> : null}
       {tab === "album" ? <Album logs={logs} onSelect={setSelectedLog} /> : null}
 
-      {selectedLog ? <WateringLogDetailSheet log={selectedLog} plant={plant} onClose={() => setSelectedLog(null)} /> : null}
-      {adding ? <WateringLogFormSheet plants={plants} selectedPlantId={plant.id} selectedDate={todayISO()} onClose={() => setAdding(false)} /> : null}
+      {selectedLog ? <WateringLogDetailSheet log={selectedLog} plant={activePlant} onClose={() => setSelectedLog(null)} /> : null}
+      {adding ? <WateringLogFormSheet plants={plants} selectedPlantId={activePlant.id} selectedDate={todayISO()} onClose={() => setAdding(false)} /> : null}
     </>
   );
 }

@@ -45,6 +45,8 @@ create table if not exists public.plant_snoozes (
   snoozed_until date not null
 );
 
+create unique index if not exists plant_snoozes_plant_id_unique_idx on public.plant_snoozes(plant_id);
+
 alter table public.profiles enable row level security;
 alter table public.plants enable row level security;
 alter table public.watering_logs enable row level security;

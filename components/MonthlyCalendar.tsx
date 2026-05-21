@@ -3,13 +3,14 @@
 import { useMemo, useState } from "react";
 import { addMonths, format, getDay, subMonths } from "date-fns";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { usePlantData } from "@/components/AppProviders";
 import { BottomSheet } from "@/components/BottomSheet";
 import { WateringLogFormSheet } from "@/components/WateringLogFormSheet";
-import { plants, wateringLogs } from "@/lib/sample-data";
 import { buildMonthBuckets } from "@/lib/watering";
-import type { DateBucket, WateringLog } from "@/lib/types";
+import type { DateBucket, Plant, WateringLog } from "@/lib/types";
 
 export function MonthlyCalendar() {
+  const { plants, wateringLogs } = usePlantData();
   const [month, setMonth] = useState(new Date());
   const [selected, setSelected] = useState<DateBucket | null>(null);
   const [adding, setAdding] = useState(false);
@@ -61,7 +62,7 @@ export function MonthlyCalendar() {
                 onClick={() => setSelected(bucket)}
               >
                 <span className="text-xs font-semibold text-neutral-700">{day}</span>
-                <CalendarItems bucket={bucket} />
+                <CalendarItems bucket={bucket} plants={plants} />
               </button>
             );
           })}
@@ -70,7 +71,7 @@ export function MonthlyCalendar() {
 
       {selected && !adding ? (
         <BottomSheet title={selected.date} onClose={() => setSelected(null)}>
-          <DateSheetContent bucket={selected} onAdd={() => setAdding(true)} />
+          <DateSheetContent bucket={selected} plants={plants} onAdd={() => setAdding(true)} />
         </BottomSheet>
       ) : null}
 
@@ -86,7 +87,7 @@ export function MonthlyCalendar() {
   );
 }
 
-function CalendarItems({ bucket }: { bucket: DateBucket }) {
+function CalendarItems({ bucket, plants }: { bucket: DateBucket; plants: Plant[] }) {
   const visibleActual = bucket.actualLogs.slice(0, 2);
   const showScheduled = bucket.actualLogs.length === 0 ? bucket.scheduledPlants.slice(0, 2) : [];
   const remaining = bucket.actualLogs.length + bucket.scheduledPlants.length - visibleActual.length - showScheduled.length;
@@ -95,7 +96,7 @@ function CalendarItems({ bucket }: { bucket: DateBucket }) {
     <div className="mt-1 space-y-0.5">
       {visibleActual.map((log) => (
         <p className="truncate text-[0.64rem] font-semibold text-neutral-800" key={log.id}>
-          {getPlantName(log)}
+          {getPlantName(log, plants)}
         </p>
       ))}
       {showScheduled.map((plant) => (
@@ -108,10 +109,10 @@ function CalendarItems({ bucket }: { bucket: DateBucket }) {
   );
 }
 
-function DateSheetContent({ bucket, onAdd }: { bucket: DateBucket; onAdd: () => void }) {
+function DateSheetContent({ bucket, plants, onAdd }: { bucket: DateBucket; plants: Plant[]; onAdd: () => void }) {
   return (
     <div className="space-y-5 pb-16">
-      <LogGroup title="실제 기록" logs={bucket.actualLogs} />
+      <LogGroup title="실제 기록" logs={bucket.actualLogs} plants={plants} />
       <section>
         <h3 className="mb-2 text-sm font-semibold text-neutral-800">예정된 물주기</h3>
         <div className="space-y-2">
@@ -135,14 +136,14 @@ function DateSheetContent({ bucket, onAdd }: { bucket: DateBucket; onAdd: () => 
   );
 }
 
-function LogGroup({ title, logs }: { title: string; logs: WateringLog[] }) {
+function LogGroup({ title, logs, plants }: { title: string; logs: WateringLog[]; plants: Plant[] }) {
   return (
     <section>
       <h3 className="mb-2 text-sm font-semibold text-neutral-800">{title}</h3>
       <div className="space-y-2">
         {logs.map((log) => (
           <div className="rounded-lg bg-leaf-50 px-3 py-2 text-sm font-medium text-leaf-900" key={log.id}>
-            {getPlantName(log)}
+            {getPlantName(log, plants)}
           </div>
         ))}
         {logs.length === 0 ? <p className="text-sm text-neutral-400">기록이 없어요.</p> : null}
@@ -151,6 +152,6 @@ function LogGroup({ title, logs }: { title: string; logs: WateringLog[] }) {
   );
 }
 
-function getPlantName(log: WateringLog) {
+function getPlantName(log: WateringLog, plants: Plant[]) {
   return plants.find((plant) => plant.id === log.plantId)?.nickname ?? "식물";
 }

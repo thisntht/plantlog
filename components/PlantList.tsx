@@ -3,8 +3,9 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowDownUp, Plus } from "lucide-react";
+import { usePlantData } from "@/components/AppProviders";
 import { PlantAvatar } from "@/components/PlantAvatar";
-import { plants, wateringLogs } from "@/lib/sample-data";
+import { plants as samplePlants } from "@/lib/sample-data";
 import { todayISO } from "@/lib/date";
 import { getNextWateringDate } from "@/lib/watering";
 
@@ -12,6 +13,7 @@ type SortMode = "needs" | "name";
 
 export function PlantList() {
   const [sort, setSort] = useState<SortMode>("needs");
+  const { plants, wateringLogs, isDemo } = usePlantData();
   const today = todayISO();
   const sortedPlants = useMemo(() => {
     return [...plants].sort((a, b) => {
@@ -19,9 +21,11 @@ export function PlantList() {
       return getNextWateringDate(a, wateringLogs).localeCompare(getNextWateringDate(b, wateringLogs));
     });
   }, [sort]);
+  const staticPlantIds = useMemo(() => new Set(samplePlants.map((plant) => plant.id)), []);
 
   return (
     <>
+      {isDemo ? <p className="mb-4 rounded-xl bg-white p-4 text-sm leading-6 text-neutral-500 shadow-[0_8px_25px_rgba(35,55,40,0.05)]">로그인 전에는 샘플 식물 목록이 보입니다. 로그인 후 추가한 식물은 Supabase에 저장됩니다.</p> : null}
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="inline-flex rounded-lg bg-white p-1 shadow-[0_8px_25px_rgba(35,55,40,0.05)]">
           <SortButton active={sort === "needs"} onClick={() => setSort("needs")} label="관리 필요순" />
@@ -38,13 +42,16 @@ export function PlantList() {
           return (
             <Link
               className="flex items-center gap-3 rounded-xl bg-white p-3 shadow-[0_8px_25px_rgba(35,55,40,0.05)] transition hover:bg-leaf-50/60"
-              href={`/plants/${plant.id}`}
+              href={staticPlantIds.has(plant.id) ? `/plants/${plant.id}` : "/plants"}
               key={plant.id}
             >
               <PlantAvatar name={plant.nickname} imageUrl={plant.coverImageUrl} />
               <div className="min-w-0 flex-1">
                 <h2 className="truncate font-medium text-neutral-900">{plant.nickname}</h2>
-                <p className="mt-0.5 text-sm text-neutral-500">{nextDate <= today ? "오늘 확인" : `${nextDate} 예정`}</p>
+                <p className="mt-0.5 text-sm text-neutral-500">
+                  {nextDate <= today ? "오늘 확인" : `${nextDate} 예정`}
+                  {!staticPlantIds.has(plant.id) ? " · 동기화됨" : ""}
+                </p>
               </div>
               <ArrowDownUp aria-hidden className="h-4 w-4 text-neutral-300" />
             </Link>
