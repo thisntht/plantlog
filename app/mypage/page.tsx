@@ -1,10 +1,11 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Bell, Lock, UserRound } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { BottomSheet } from "@/components/BottomSheet";
 import { PageHeader } from "@/components/PageHeader";
 import { usePlantData } from "@/components/AppProviders";
 import { profile } from "@/lib/sample-data";
@@ -12,6 +13,7 @@ import { profile } from "@/lib/sample-data";
 export default function MyPage() {
   const { user, signOut, isDemo, notificationTime, updateNotificationTime } = usePlantData();
   const [selectedHour, selectedMinute] = notificationTime.split(":");
+  const [timeSheetOpen, setTimeSheetOpen] = useState(false);
 
   return (
     <AppShell>
@@ -36,11 +38,13 @@ export default function MyPage() {
         </div>
       ) : null}
       <section className="mt-4 space-y-2">
-        <NotificationTimePicker
-          hour={selectedHour ?? "20"}
-          minute={selectedMinute ?? "00"}
-          onChange={(time) => void updateNotificationTime(time)}
-        />
+        <button className="flex w-full items-center gap-3 rounded-lg border border-neutral-200 bg-white p-4 text-left" type="button" onClick={() => setTimeSheetOpen(true)}>
+          <span className="text-neutral-500">
+            <Bell className="h-4 w-4" />
+          </span>
+          <span className="flex-1 text-sm font-medium text-neutral-800">알림 시간</span>
+          <span className="font-mono text-sm text-neutral-500">{notificationTime}</span>
+        </button>
         <SettingRow icon={<Lock className="h-4 w-4" />} label="공개 여부" value={profile.isPublic ? "공개" : "비공개"} />
       </section>
       {user ? (
@@ -48,18 +52,28 @@ export default function MyPage() {
           로그아웃
         </button>
       ) : null}
+      {timeSheetOpen ? (
+        <NotificationTimeSheet
+          hour={selectedHour ?? "20"}
+          minute={selectedMinute ?? "00"}
+          onChange={(time) => void updateNotificationTime(time)}
+          onClose={() => setTimeSheetOpen(false)}
+        />
+      ) : null}
     </AppShell>
   );
 }
 
-function NotificationTimePicker({
+function NotificationTimeSheet({
   hour,
   minute,
-  onChange
+  onChange,
+  onClose
 }: {
   hour: string;
   minute: string;
   onChange: (time: string) => void;
+  onClose: () => void;
 }) {
   const hours = useMemo(() => Array.from({ length: 24 }, (_, index) => String(index).padStart(2, "0")), []);
   const minutes = useMemo(() => Array.from({ length: 12 }, (_, index) => String(index * 5).padStart(2, "0")), []);
@@ -68,26 +82,18 @@ function NotificationTimePicker({
   const selectMinute = (nextMinute: string) => onChange(`${hour}:${nextMinute}`);
 
   return (
-    <div className="rounded-lg border border-neutral-200 bg-white p-4">
-      <div className="mb-3 flex items-center gap-3">
-        <span className="text-neutral-500">
-          <Bell className="h-4 w-4" />
-        </span>
-        <div className="flex-1">
-          <p className="text-sm font-medium text-neutral-800">알림 시간</p>
-          <p className="mt-0.5 text-xs text-neutral-400">24시간 기준</p>
-        </div>
-        <span className="font-mono text-sm font-medium text-neutral-900">
+    <BottomSheet title="알림 시간" onClose={onClose}>
+      <div className="pb-2">
+        <div className="mb-4 text-center font-mono text-xl font-semibold text-neutral-900">
           {hour}:{minute}
-        </span>
+        </div>
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+          <TimeColumn label="시" options={hours} selected={hour} onSelect={selectHour} />
+          <span className="pt-6 text-sm font-semibold text-neutral-300">:</span>
+          <TimeColumn label="분" options={minutes} selected={minute} onSelect={selectMinute} />
+        </div>
       </div>
-
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-        <TimeColumn label="시" options={hours} selected={hour} onSelect={selectHour} />
-        <span className="pt-6 text-sm font-semibold text-neutral-300">:</span>
-        <TimeColumn label="분" options={minutes} selected={minute} onSelect={selectMinute} />
-      </div>
-    </div>
+    </BottomSheet>
   );
 }
 
