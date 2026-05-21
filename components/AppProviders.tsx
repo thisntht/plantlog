@@ -47,13 +47,16 @@ export function AppProviders({ children }: { children: ReactNode }) {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [plants, setPlants] = useState<Plant[]>(samplePlants);
-  const [wateringLogs, setWateringLogs] = useState<WateringLog[]>(sampleLogs);
-  const [plantSnoozes, setPlantSnoozes] = useState<PlantSnooze[]>(sampleSnoozes);
-  const isDemo = !hasSupabaseConfig() || !user;
+  const [plants, setPlants] = useState<Plant[]>([]);
+  const [wateringLogs, setWateringLogs] = useState<WateringLog[]>([]);
+  const [plantSnoozes, setPlantSnoozes] = useState<PlantSnooze[]>([]);
+  const isDemo = !loading && (!hasSupabaseConfig() || !user);
 
   const refresh = useCallback(async () => {
     if (!supabase) {
+      setPlants(samplePlants);
+      setWateringLogs(sampleLogs);
+      setPlantSnoozes(sampleSnoozes);
       setLoading(false);
       return;
     }
