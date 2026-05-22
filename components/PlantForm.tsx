@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { Camera, Save } from "lucide-react";
 import { todayISO } from "@/lib/date";
 import { usePlantData } from "@/components/AppProviders";
+import type { Plant } from "@/lib/types";
 
-export function PlantForm() {
+export function PlantForm({ onSaved, variant = "page" }: { onSaved?: (plant: Plant | null) => void; variant?: "page" | "sheet" }) {
   const router = useRouter();
   const { addPlant, isDemo, user } = usePlantData();
   const [nickname, setNickname] = useState("");
@@ -52,6 +53,10 @@ export function PlantForm() {
         startedAt,
         memo: memo.trim()
       });
+      if (onSaved) {
+        onSaved(plant);
+        return;
+      }
       router.push(plant ? `/plants/${plant.id}` : "/plants");
     } catch (error) {
       const message = getErrorMessage(error);
@@ -62,7 +67,7 @@ export function PlantForm() {
   };
 
   return (
-    <form className="space-y-5 rounded-lg border border-neutral-200 bg-white p-4">
+    <form className={variant === "sheet" ? "space-y-5" : "space-y-5 rounded-lg border border-neutral-200 bg-white p-4"}>
       <Field label="표시 이름" placeholder="큰 몬스" required value={nickname} onChange={setNickname} />
       <Field label="물주기 주기" placeholder="7" required type="number" suffix="일" value={wateringIntervalDays} onChange={setWateringIntervalDays} />
       <Field label="정식 식물명" placeholder="Monstera deliciosa" value={scientificName} onChange={setScientificName} />

@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowDownUp, Plus } from "lucide-react";
+import { BottomSheet } from "@/components/BottomSheet";
+import { PlantForm } from "@/components/PlantForm";
 import { usePlantData } from "@/components/AppProviders";
 import { PlantAvatar } from "@/components/PlantAvatar";
 import { todayISO } from "@/lib/date";
@@ -12,6 +14,7 @@ type SortMode = "needs" | "name";
 
 export function PlantList() {
   const [sort, setSort] = useState<SortMode>("needs");
+  const [adding, setAdding] = useState(false);
   const { plants, wateringLogs, isDemo } = usePlantData();
   const today = todayISO();
   const sortedPlants = useMemo(() => {
@@ -36,9 +39,14 @@ export function PlantList() {
           <SortButton active={sort === "needs"} onClick={() => setSort("needs")} label="관리 필요순" />
           <SortButton active={sort === "name"} onClick={() => setSort("name")} label="가나다순" />
         </div>
-        <Link className="flex h-10 w-10 items-center justify-center rounded-md bg-neutral-900 text-white" href="/plants/new" aria-label="식물 추가">
+        <button
+          className="flex h-10 w-10 items-center justify-center rounded-md bg-neutral-900 text-white"
+          type="button"
+          onClick={() => setAdding(true)}
+          aria-label="식물 추가"
+        >
           <Plus aria-hidden className="h-5 w-5" />
-        </Link>
+        </button>
       </div>
 
       <div className="space-y-2">
@@ -67,6 +75,11 @@ export function PlantList() {
           </div>
         ) : null}
       </div>
+      {adding ? (
+        <BottomSheet title="식물 등록" onClose={() => setAdding(false)}>
+          <PlantForm variant="sheet" onSaved={() => setAdding(false)} />
+        </BottomSheet>
+      ) : null}
     </>
   );
 }
