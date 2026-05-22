@@ -135,12 +135,14 @@ export function WateringLogDetailSheet({
           <>
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-neutral-700">날짜</span>
-              <input
-                className="block h-11 w-full max-w-full rounded-md border border-neutral-200 bg-white px-3 text-base text-neutral-900 outline-none focus:border-neutral-500"
-                type="date"
-                value={wateredDate}
-                onChange={(event) => setWateredDate(event.target.value)}
-              />
+              <div className="w-full min-w-0 overflow-hidden rounded-md border border-neutral-200 bg-white focus-within:border-neutral-500">
+                <input
+                  className="block h-11 w-full min-w-0 appearance-none bg-transparent px-3 text-center text-base text-neutral-900 outline-none"
+                  type="date"
+                  value={wateredDate}
+                  onChange={(event) => setWateredDate(event.target.value)}
+                />
+              </div>
             </label>
 
             <ChoiceGroup title="흙 상태" options={soilOptions} selected={soilStatus} onSelect={setSoilStatus} />

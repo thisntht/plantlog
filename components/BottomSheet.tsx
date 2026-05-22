@@ -21,7 +21,7 @@ export function BottomSheet({
   return (
     <div className="fixed inset-0 z-50 flex items-end bg-neutral-950/25 px-3" role="dialog" aria-modal="true">
       <button className="absolute inset-0 cursor-default" aria-label="닫기" onClick={onClose} />
-      <section className="safe-bottom relative mx-auto w-full max-w-md rounded-t-lg border border-neutral-200 bg-white px-5 pt-4">
+      <section className="safe-bottom relative mx-auto w-full max-w-md overflow-x-hidden rounded-t-lg border border-neutral-200 bg-white px-5 pt-4">
         <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-neutral-200" />
         <div className="mb-4 flex min-h-9 items-center justify-between gap-4">
           <div className="flex items-center gap-1">
@@ -42,7 +42,7 @@ export function BottomSheet({
             )}
           </div>
         </div>
-        <div className="sheet-scroll pb-3">{children}</div>
+        <div className="sheet-scroll max-w-full overflow-x-hidden pb-3">{children}</div>
       </section>
     </div>
   );
