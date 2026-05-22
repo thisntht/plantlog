@@ -227,7 +227,7 @@ function DateDetailSheet({
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-hidden bg-neutral-950/35 px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-16 backdrop-blur-sm"
+      className="fixed inset-0 z-50 touch-none overflow-hidden bg-neutral-950/35 px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-16 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       onTouchStart={(event) => {
@@ -255,7 +255,7 @@ function DateDetailSheet({
         </div>
 
         <section className="relative min-h-0 flex-1 rounded-[1.6rem] bg-white p-5">
-          <div className="max-h-[calc(100%-5rem)] overflow-y-auto pb-20">
+          <div className="max-h-[calc(100%-5rem)] touch-pan-y overflow-y-auto overscroll-contain pb-20">
             <LogGroup title="기록" logs={bucket.actualLogs} plants={plants} onSelectLog={onSelectLog} />
             <section className="mt-5">
               <h3 className="mb-2 text-sm font-semibold text-neutral-800">예정된 물주기</h3>
