@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Edit3, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { Check, Edit3, Trash2 } from "lucide-react";
 import { BottomSheet } from "@/components/BottomSheet";
 import { usePlantData } from "@/components/AppProviders";
 import { formatKoreanDate } from "@/lib/date";
@@ -54,27 +54,28 @@ export function WateringLogDetailSheet({
   const [memo, setMemo] = useState(log.memo ?? "");
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const [isEditing, setIsEditing] = useState(false);
-
-  useEffect(() => {
-    if (!user || !isEditing) return;
-
-    setSaveState("saving");
-    const timer = window.setTimeout(async () => {
-      await updateWateringLog(log.id, {
-        wateredDate,
-        soilStatus,
-        waterAmount,
-        plantConditions,
-        memo
-      });
-      setSaveState("saved");
-    }, 450);
-
-    return () => window.clearTimeout(timer);
-  }, [isEditing, log.id, memo, plantConditions, soilStatus, updateWateringLog, user, waterAmount, wateredDate]);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const toggleCondition = (value: PlantCondition) => {
     setPlantConditions((current) => (current.includes(value) ? current.filter((item) => item !== value) : [...current, value]));
+  };
+
+  const save = async () => {
+    if (!user) {
+      setIsEditing(false);
+      return;
+    }
+
+    setSaveState("saving");
+    await updateWateringLog(log.id, {
+      wateredDate,
+      soilStatus,
+      waterAmount,
+      plantConditions,
+      memo
+    });
+    setSaveState("saved");
+    setIsEditing(false);
   };
 
   const remove = async () => {
@@ -84,24 +85,23 @@ export function WateringLogDetailSheet({
 
   return (
     <BottomSheet
-      title={isEditing ? "기록 수정" : undefined}
       onClose={onClose}
-      headerLeft={
+      headerAction={
         <>
           <button
             className={`flex h-9 w-9 items-center justify-center rounded-lg hover:bg-neutral-100 ${
               isEditing ? "bg-neutral-100 text-neutral-900" : "text-neutral-500"
             }`}
             type="button"
-            onClick={() => setIsEditing((current) => !current)}
-            aria-label="수정"
+            onClick={() => (isEditing ? void save() : setIsEditing(true))}
+            aria-label={isEditing ? "저장" : "수정"}
           >
-            <Edit3 aria-hidden className="h-4 w-4" />
+            {isEditing ? <Check aria-hidden className="h-4 w-4" /> : <Edit3 aria-hidden className="h-4 w-4" />}
           </button>
           <button
             className="flex h-9 w-9 items-center justify-center rounded-lg text-red-500 hover:bg-red-50"
             type="button"
-            onClick={() => void remove()}
+            onClick={() => setDeleteConfirmOpen(true)}
             aria-label="삭제"
           >
             <Trash2 aria-hidden className="h-4 w-4" />
@@ -113,7 +113,7 @@ export function WateringLogDetailSheet({
         <div className="rounded-lg border border-neutral-200 bg-white p-4">
           <p className="text-sm font-medium text-neutral-900">{plant.nickname}</p>
           <p className="mt-1 text-xs text-neutral-400">
-            {isEditing ? (saveState === "saving" ? "저장 중" : saveState === "saved" ? "저장됨" : "자동 저장") : formatKoreanDate(wateredDate)}
+            {isEditing ? (saveState === "saving" ? "저장 중" : "체크를 누르면 저장됩니다") : saveState === "saved" ? "저장됨" : formatKoreanDate(wateredDate)}
           </p>
         </div>
 
@@ -180,7 +180,44 @@ export function WateringLogDetailSheet({
           </div>
         ) : null}
       </div>
+      {deleteConfirmOpen ? (
+        <ConfirmOverlay
+          title="기록을 삭제할까요?"
+          description="삭제한 물주기 기록은 되돌릴 수 없습니다."
+          onCancel={() => setDeleteConfirmOpen(false)}
+          onConfirm={() => void remove()}
+        />
+      ) : null}
     </BottomSheet>
+  );
+}
+
+function ConfirmOverlay({
+  title,
+  description,
+  onCancel,
+  onConfirm
+}: {
+  title: string;
+  description: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/85 px-5 backdrop-blur-sm">
+      <div className="w-full rounded-lg border border-neutral-200 bg-white p-4 shadow-[0_12px_35px_rgba(0,0,0,0.08)]">
+        <h3 className="text-base font-semibold text-neutral-900">{title}</h3>
+        <p className="mt-2 text-sm leading-6 text-neutral-500">{description}</p>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <button className="h-10 rounded-md border border-neutral-200 text-sm font-medium text-neutral-700" type="button" onClick={onCancel}>
+            취소
+          </button>
+          <button className="h-10 rounded-md bg-red-500 text-sm font-semibold text-white" type="button" onClick={onConfirm}>
+            삭제
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
