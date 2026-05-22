@@ -19,7 +19,7 @@ export function MonthlyCalendar() {
   const [selected, setSelected] = useState<DateBucket | null>(null);
   const [selectedLog, setSelectedLog] = useState<WateringLog | null>(null);
   const [adding, setAdding] = useState(false);
-  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
   const [sheetTouchStart, setSheetTouchStart] = useState<{ x: number; y: number } | null>(null);
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
   const wheelLockRef = useRef<number | null>(null);
@@ -42,11 +42,14 @@ export function MonthlyCalendar() {
   };
 
   const moveMonth = (amount: number) => setMonth((current) => addMonths(current, amount));
-  const handleSwipeEnd = (clientX: number) => {
-    if (touchStartX === null) return;
-    const distance = clientX - touchStartX;
-    if (Math.abs(distance) > 48) moveMonth(distance < 0 ? 1 : -1);
-    setTouchStartX(null);
+  const handleSwipeEnd = (clientX: number, clientY: number) => {
+    if (!touchStart) return;
+    const distanceX = clientX - touchStart.x;
+    const distanceY = clientY - touchStart.y;
+    if (Math.abs(distanceX) > 56 && Math.abs(distanceX) > Math.abs(distanceY) * 1.5) {
+      moveMonth(distanceX < 0 ? 1 : -1);
+    }
+    setTouchStart(null);
   };
   const handleWheel = (deltaX: number, deltaY: number) => {
     if (Math.abs(deltaX) < 32 || Math.abs(deltaX) < Math.abs(deltaY) || wheelLockRef.current) return;
@@ -87,8 +90,14 @@ export function MonthlyCalendar() {
 
       <section
         className="-mx-5"
-        onTouchStart={(event) => setTouchStartX(event.touches[0]?.clientX ?? null)}
-        onTouchEnd={(event) => handleSwipeEnd(event.changedTouches[0]?.clientX ?? 0)}
+        onTouchStart={(event) => {
+          const touch = event.touches[0];
+          setTouchStart({ x: touch?.clientX ?? 0, y: touch?.clientY ?? 0 });
+        }}
+        onTouchEnd={(event) => {
+          const touch = event.changedTouches[0];
+          handleSwipeEnd(touch?.clientX ?? 0, touch?.clientY ?? 0);
+        }}
         onWheel={(event) => handleWheel(event.deltaX, event.deltaY)}
       >
         <div className="grid grid-cols-7 border-y border-neutral-200 text-center text-[0.72rem] font-medium text-neutral-400">
