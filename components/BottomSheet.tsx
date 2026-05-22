@@ -7,12 +7,14 @@ export function BottomSheet({
   title,
   headerAction,
   headerLeft,
+  hideCloseButton = false,
   children,
   onClose
 }: {
   title?: string;
   headerAction?: ReactNode;
   headerLeft?: ReactNode;
+  hideCloseButton?: boolean;
   children: ReactNode;
   onClose: () => void;
 }) {
@@ -28,14 +30,16 @@ export function BottomSheet({
           </div>
           <div className="flex items-center gap-1">
             {headerAction}
-            <button
-              className="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100"
-              type="button"
-              onClick={onClose}
-              aria-label="닫기"
-            >
-              <X aria-hidden className="h-5 w-5" />
-            </button>
+            {hideCloseButton ? null : (
+              <button
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100"
+                type="button"
+                onClick={onClose}
+                aria-label="닫기"
+              >
+                <X aria-hidden className="h-5 w-5" />
+              </button>
+            )}
           </div>
         </div>
         <div className="sheet-scroll pb-3">{children}</div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Edit3, Trash2 } from "lucide-react";
+import { Check, Edit3, Trash2, X } from "lucide-react";
 import { BottomSheet } from "@/components/BottomSheet";
 import { usePlantData } from "@/components/AppProviders";
 import { formatKoreanDate } from "@/lib/date";
@@ -55,6 +55,7 @@ export function WateringLogDetailSheet({
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const [isEditing, setIsEditing] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [showSavedToast, setShowSavedToast] = useState(false);
 
   const toggleCondition = (value: PlantCondition) => {
     setPlantConditions((current) => (current.includes(value) ? current.filter((item) => item !== value) : [...current, value]));
@@ -76,6 +77,8 @@ export function WateringLogDetailSheet({
     });
     setSaveState("saved");
     setIsEditing(false);
+    setShowSavedToast(true);
+    window.setTimeout(() => setShowSavedToast(false), 1400);
   };
 
   const remove = async () => {
@@ -85,7 +88,18 @@ export function WateringLogDetailSheet({
 
   return (
     <BottomSheet
+      hideCloseButton
       onClose={onClose}
+      headerLeft={
+        <button
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100"
+          type="button"
+          onClick={onClose}
+          aria-label="닫기"
+        >
+          <X aria-hidden className="h-5 w-5" />
+        </button>
+      }
       headerAction={
         <>
           <button
@@ -122,7 +136,7 @@ export function WateringLogDetailSheet({
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-neutral-700">날짜</span>
               <input
-                className="h-11 w-full rounded-md border border-neutral-200 bg-white px-3 text-base text-neutral-900 outline-none focus:border-neutral-500"
+                className="block h-11 w-full max-w-full rounded-md border border-neutral-200 bg-white px-3 text-base text-neutral-900 outline-none focus:border-neutral-500"
                 type="date"
                 value={wateredDate}
                 onChange={(event) => setWateredDate(event.target.value)}
@@ -188,6 +202,11 @@ export function WateringLogDetailSheet({
           onConfirm={() => void remove()}
         />
       ) : null}
+      {showSavedToast ? (
+        <div className="pointer-events-none absolute bottom-[max(1.5rem,env(safe-area-inset-bottom))] left-1/2 z-20 -translate-x-1/2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-800 shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
+          저장되었습니다
+        </div>
+      ) : null}
     </BottomSheet>
   );
 }
@@ -212,7 +231,7 @@ function ConfirmOverlay({
           <button className="h-10 rounded-md border border-neutral-200 text-sm font-medium text-neutral-700" type="button" onClick={onCancel}>
             취소
           </button>
-          <button className="h-10 rounded-md bg-red-500 text-sm font-semibold text-white" type="button" onClick={onConfirm}>
+          <button className="h-10 rounded-md border border-red-100 bg-white text-sm font-semibold text-red-500" type="button" onClick={onConfirm}>
             삭제
           </button>
         </div>
