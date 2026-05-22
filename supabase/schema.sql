@@ -94,6 +94,13 @@ create policy "plant snoozes are private" on public.plant_snoozes
     )
   );
 
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on public.profiles to authenticated;
+grant select, insert, update, delete on public.plants to authenticated;
+grant select, insert, update, delete on public.watering_logs to authenticated;
+grant select, insert, update, delete on public.watering_log_photos to authenticated;
+grant select, insert, update, delete on public.plant_snoozes to authenticated;
+
 create index if not exists plants_user_id_idx on public.plants(user_id);
 create index if not exists watering_logs_user_plant_date_idx on public.watering_logs(user_id, plant_id, watered_date desc);
 create index if not exists plant_snoozes_plant_id_idx on public.plant_snoozes(plant_id);

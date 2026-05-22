@@ -42,8 +42,9 @@ export function PlantForm() {
         memo: memo.trim()
       });
       router.push(plant ? `/plants/${plant.id}` : "/plants");
-    } catch {
-      setError("저장하지 못했어요. 잠시 뒤 다시 시도해주세요.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "알 수 없는 오류";
+      setError(`저장하지 못했어요. ${message}`);
     } finally {
       setSaving(false);
     }
