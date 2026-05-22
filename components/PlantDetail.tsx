@@ -3,13 +3,14 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, Droplets, Edit3, ImageIcon, List, Settings2, Trash2 } from "lucide-react";
+import { addMonths, endOfMonth, format, getDay, startOfMonth } from "date-fns";
+import { CalendarDays, ChevronLeft, ChevronRight, Droplets, Edit3, ImageIcon, List, Settings2, Trash2 } from "lucide-react";
 import { usePlantData } from "@/components/AppProviders";
 import { BottomSheet } from "@/components/BottomSheet";
 import { PlantAvatar } from "@/components/PlantAvatar";
 import { WateringLogDetailSheet } from "@/components/WateringLogDetailSheet";
 import { WateringLogFormSheet } from "@/components/WateringLogFormSheet";
-import { formatKoreanDate, todayISO } from "@/lib/date";
+import { dateToISO, formatKoreanDate, todayISO } from "@/lib/date";
 import { getLastWateredDate, getPlantLogs, getWateringIntervalSuggestion } from "@/lib/watering";
 import type { Plant, WateringLog } from "@/lib/types";
 
@@ -327,19 +328,67 @@ function LogList({ logs, onSelect }: { logs: WateringLog[]; onSelect: (log: Wate
   );
 }
 
+const detailWeekdays = ["일", "월", "화", "수", "목", "금", "토"];
+
 function PlantMiniCalendar({ logs, onSelect }: { logs: WateringLog[]; onSelect: (log: WateringLog) => void }) {
+  const [month, setMonth] = useState(new Date());
+  const monthStart = startOfMonth(month);
+  const monthEnd = endOfMonth(month);
+  const leading = getDay(monthStart);
+  const daysInMonth = Number(format(monthEnd, "d"));
+  const cells: Array<{ key: string; date?: string; day?: number }> = [
+    ...Array.from({ length: leading }, (_, index) => ({ key: `blank-${index}` })),
+    ...Array.from({ length: daysInMonth }, (_, index) => {
+      const date = dateToISO(new Date(month.getFullYear(), month.getMonth(), index + 1));
+      return { key: date, date, day: index + 1 };
+    })
+  ];
+
   return (
-    <div className="grid w-full max-w-full grid-cols-7 gap-1 overflow-hidden rounded-lg border border-neutral-200 bg-white p-2">
-      {Array.from({ length: 31 }).map((_, index) => {
-        const day = index + 1;
-        const log = logs.find((item) => Number(item.wateredDate.slice(-2)) === day);
-        return (
-          <button className="flex aspect-square min-w-0 flex-col items-center justify-center rounded-md text-sm text-neutral-600 hover:bg-neutral-50" key={day} type="button" onClick={() => log && onSelect(log)}>
+    <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
+      <div className="flex items-center justify-between border-b border-neutral-200 px-2 py-2">
+        <button
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-400 hover:bg-neutral-50"
+          type="button"
+          onClick={() => setMonth((current) => addMonths(current, -1))}
+          aria-label="이전 달"
+        >
+          <ChevronLeft aria-hidden className="h-4 w-4" />
+        </button>
+        <p className="text-sm font-semibold text-neutral-900">{format(month, "yyyy.MM")}</p>
+        <button
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-400 hover:bg-neutral-50"
+          type="button"
+          onClick={() => setMonth((current) => addMonths(current, 1))}
+          aria-label="다음 달"
+        >
+          <ChevronRight aria-hidden className="h-4 w-4" />
+        </button>
+      </div>
+      <div className="grid grid-cols-7 border-b border-neutral-200 text-center text-[0.72rem] font-medium text-neutral-400">
+        {detailWeekdays.map((day) => (
+          <div className="py-2" key={day}>
             {day}
-            {log ? <span className="mt-1 h-1.5 w-1.5 rounded-full bg-neutral-900" /> : <span className="mt-1 h-1.5 w-1.5" />}
-          </button>
-        );
-      })}
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 p-2">
+        {cells.map((cell) => {
+          const log = cell.date ? logs.find((item) => item.wateredDate === cell.date) : undefined;
+          return (
+            <button
+              className="flex aspect-square min-w-0 flex-col items-center justify-center rounded-md text-sm text-neutral-600 hover:bg-neutral-50 disabled:hover:bg-white"
+              key={cell.key}
+              type="button"
+              disabled={!cell.date}
+              onClick={() => log && onSelect(log)}
+            >
+              {cell.day}
+              {cell.date ? log ? <span className="mt-1 h-1.5 w-1.5 rounded-full bg-neutral-900" /> : <span className="mt-1 h-1.5 w-1.5" /> : null}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
