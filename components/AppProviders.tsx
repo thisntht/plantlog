@@ -17,6 +17,8 @@ type NewPlantInput = {
   memo?: string;
 };
 
+type UpdatePlantInput = Partial<NewPlantInput>;
+
 type NewWateringLogInput = {
   plantId: string;
   wateredDate: string;
@@ -46,7 +48,9 @@ type PlantDataContextValue = {
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   addPlant: (input: NewPlantInput) => Promise<Plant | null>;
-  addWateringLog: (input: NewWateringLogInput) => Promise<void>;
+  updatePlant: (plantId: string, input: UpdatePlantInput) => Promise<void>;
+  deletePlant: (plantId: string) => Promise<void>;
+  addWateringLog: (input: NewWateringLogInput) => Promise<WateringLog | null>;
   updateWateringLog: (logId: string, input: UpdateWateringLogInput) => Promise<void>;
   deleteWateringLog: (logId: string) => Promise<void>;
   snoozePlant: (plantId: string, days: number) => Promise<void>;
@@ -161,18 +165,53 @@ export function AppProviders({ children }: { children: ReactNode }) {
 
   const addWateringLog = useCallback(
     async (input: NewWateringLogInput) => {
+      if (!supabase || !user) return null;
+
+      const { data, error } = await supabase
+        .from("watering_logs")
+        .insert({
+          user_id: user.id,
+          plant_id: input.plantId,
+          watered_date: input.wateredDate,
+          soil_status: input.soilStatus || null,
+          water_amount: input.waterAmount || null,
+          plant_conditions: input.plantConditions,
+          memo: input.memo || null
+        })
+        .select("*, watering_log_photos(*)")
+        .single();
+
+      if (error) throw error;
+      await refresh();
+      return data ? mapWateringLog(data) : null;
+    },
+    [refresh, supabase, user]
+  );
+
+  const updatePlant = useCallback(
+    async (plantId: string, input: UpdatePlantInput) => {
       if (!supabase || !user) return;
 
-      const { error } = await supabase.from("watering_logs").insert({
-        user_id: user.id,
-        plant_id: input.plantId,
-        watered_date: input.wateredDate,
-        soil_status: input.soilStatus || null,
-        water_amount: input.waterAmount || null,
-        plant_conditions: input.plantConditions,
-        memo: input.memo || null
-      });
+      const payload = {
+        nickname: input.nickname,
+        scientific_name: input.scientificName ?? null,
+        plant_type: input.plantType ?? null,
+        watering_interval_days: input.wateringIntervalDays,
+        started_at: input.startedAt,
+        memo: input.memo ?? null
+      };
 
+      const { error } = await supabase.from("plants").update(payload).eq("id", plantId).eq("user_id", user.id);
+      if (error) throw error;
+      await refresh();
+    },
+    [refresh, supabase, user]
+  );
+
+  const deletePlant = useCallback(
+    async (plantId: string) => {
+      if (!supabase || !user) return;
+      const { error } = await supabase.from("plants").delete().eq("id", plantId).eq("user_id", user.id);
       if (error) throw error;
       await refresh();
     },
@@ -260,6 +299,8 @@ export function AppProviders({ children }: { children: ReactNode }) {
       signInWithGoogle,
       signOut,
       addPlant,
+      updatePlant,
+      deletePlant,
       addWateringLog,
       updateWateringLog,
       deleteWateringLog,
@@ -269,6 +310,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
     [
       addPlant,
       addWateringLog,
+      deletePlant,
       deleteWateringLog,
       isDemo,
       loading,
@@ -280,6 +322,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
       signOut,
       snoozePlant,
       updateNotificationTime,
+      updatePlant,
       updateWateringLog,
       user,
       wateringLogs

@@ -19,6 +19,12 @@ export function HomeDashboard() {
   const unchecked = getUncheckedPlants(plants, wateringLogs, today);
   const [formPlant, setFormPlant] = useState<Plant | null>(null);
   const [snoozePlant, setSnoozePlant] = useState<Plant | null>(null);
+  const [showSavedToast, setShowSavedToast] = useState(false);
+
+  const showSaved = () => {
+    setShowSavedToast(true);
+    window.setTimeout(() => setShowSavedToast(false), 1400);
+  };
 
   return (
     <>
@@ -109,6 +115,7 @@ export function HomeDashboard() {
           selectedPlantId={formPlant.id}
           selectedDate={today}
           onClose={() => setFormPlant(null)}
+          onSaved={showSaved}
         />
       ) : null}
 
@@ -122,6 +129,7 @@ export function HomeDashboard() {
           }}
         />
       ) : null}
+      {showSavedToast ? <SavedToast /> : null}
     </>
   );
 }
@@ -147,6 +155,14 @@ function CompactPlantRow({ plant, meta }: { plant: Plant; meta: string }) {
 
 function EmptyState({ text }: { text: string }) {
   return <p className="rounded-lg border border-neutral-200 bg-white p-4 text-sm leading-6 text-neutral-500">{text}</p>;
+}
+
+function SavedToast() {
+  return (
+    <div className="pointer-events-none fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-1/2 z-[60] -translate-x-1/2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-800 shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
+      저장되었습니다
+    </div>
+  );
 }
 
 function SnoozeSheet({ plant, onClose, onSnooze }: { plant: Plant; onClose: () => void; onSnooze: (days: number) => Promise<void> }) {

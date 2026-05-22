@@ -2,8 +2,10 @@
 
 import type { ReactNode } from "react";
 import { useState } from "react";
-import { CalendarDays, Droplets, ImageIcon, List, Settings2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { CalendarDays, Droplets, Edit3, ImageIcon, List, Settings2, Trash2 } from "lucide-react";
 import { usePlantData } from "@/components/AppProviders";
+import { BottomSheet } from "@/components/BottomSheet";
 import { PlantAvatar } from "@/components/PlantAvatar";
 import { WateringLogDetailSheet } from "@/components/WateringLogDetailSheet";
 import { WateringLogFormSheet } from "@/components/WateringLogFormSheet";
@@ -14,15 +16,27 @@ import type { Plant, WateringLog } from "@/lib/types";
 type Tab = "list" | "calendar" | "album";
 
 export function PlantDetail({ plant }: { plant: Plant }) {
-  const { plants, wateringLogs, loading } = usePlantData();
+  const router = useRouter();
+  const { plants, wateringLogs, loading, updatePlant, deletePlant } = usePlantData();
   const [tab, setTab] = useState<Tab>("list");
   const [selectedLog, setSelectedLog] = useState<WateringLog | null>(null);
   const [adding, setAdding] = useState(false);
+  const [editingPlant, setEditingPlant] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [showSavedToast, setShowSavedToast] = useState(false);
   const foundPlant = plants.find((item) => item.id === plant.id);
   const activePlant = foundPlant ?? plant;
   const logs = getPlantLogs(activePlant.id, wateringLogs);
   const lastWatered = getLastWateredDate(activePlant.id, wateringLogs);
   const suggestion = getWateringIntervalSuggestion(activePlant, wateringLogs);
+  const showSaved = () => {
+    setShowSavedToast(true);
+    window.setTimeout(() => setShowSavedToast(false), 1400);
+  };
+  const removePlant = async () => {
+    await deletePlant(activePlant.id);
+    router.push("/plants");
+  };
 
   if (loading && !foundPlant) {
     return <div className="rounded-lg border border-neutral-200 bg-white p-5 text-sm text-neutral-500">식물 정보를 불러오는 중이에요.</div>;
@@ -35,6 +49,24 @@ export function PlantDetail({ plant }: { plant: Plant }) {
   return (
     <>
       <section className="mb-5 rounded-lg border border-neutral-200 bg-white p-4">
+        <div className="mb-3 flex justify-end gap-1">
+          <button
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100"
+            type="button"
+            aria-label="식물 수정"
+            onClick={() => setEditingPlant(true)}
+          >
+            <Edit3 aria-hidden className="h-4 w-4" />
+          </button>
+          <button
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-red-500 hover:bg-red-50"
+            type="button"
+            aria-label="식물 삭제"
+            onClick={() => setDeleteConfirmOpen(true)}
+          >
+            <Trash2 aria-hidden className="h-4 w-4" />
+          </button>
+        </div>
         <div className="flex gap-4">
           <PlantAvatar name={activePlant.nickname} imageUrl={activePlant.coverImageUrl} size="lg" />
           <div className="min-w-0 flex-1">
@@ -88,8 +120,175 @@ export function PlantDetail({ plant }: { plant: Plant }) {
       {tab === "album" ? <Album logs={logs} onSelect={setSelectedLog} /> : null}
 
       {selectedLog ? <WateringLogDetailSheet log={selectedLog} plant={activePlant} onClose={() => setSelectedLog(null)} /> : null}
-      {adding ? <WateringLogFormSheet plants={plants} selectedPlantId={activePlant.id} selectedDate={todayISO()} onClose={() => setAdding(false)} /> : null}
+      {adding ? (
+        <WateringLogFormSheet plants={plants} selectedPlantId={activePlant.id} selectedDate={todayISO()} onClose={() => setAdding(false)} onSaved={showSaved} />
+      ) : null}
+      {editingPlant ? (
+        <PlantEditSheet
+          plant={activePlant}
+          onClose={() => setEditingPlant(false)}
+          onSave={async (input) => {
+            await updatePlant(activePlant.id, input);
+            setEditingPlant(false);
+            showSaved();
+          }}
+        />
+      ) : null}
+      {deleteConfirmOpen ? (
+        <ConfirmOverlay
+          title="식물을 삭제할까요?"
+          description="삭제하면 이 식물의 물주기 기록도 함께 삭제됩니다. 이 작업은 되돌릴 수 없어요."
+          confirmLabel="삭제"
+          onCancel={() => setDeleteConfirmOpen(false)}
+          onConfirm={() => void removePlant()}
+        />
+      ) : null}
+      {showSavedToast ? <SavedToast /> : null}
     </>
+  );
+}
+
+function PlantEditSheet({ plant, onClose, onSave }: { plant: Plant; onClose: () => void; onSave: (input: {
+  nickname: string;
+  wateringIntervalDays: number;
+  scientificName?: string;
+  plantType?: string;
+  startedAt: string;
+  memo?: string;
+}) => Promise<void> }) {
+  const [nickname, setNickname] = useState(plant.nickname);
+  const [wateringIntervalDays, setWateringIntervalDays] = useState(String(plant.wateringIntervalDays));
+  const [scientificName, setScientificName] = useState(plant.scientificName ?? "");
+  const [plantType, setPlantType] = useState(plant.plantType ?? "");
+  const [startedAt, setStartedAt] = useState(plant.startedAt);
+  const [memo, setMemo] = useState(plant.memo ?? "");
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    if (!nickname.trim()) {
+      setError("표시 이름을 입력해주세요.");
+      return;
+    }
+
+    const interval = Number(wateringIntervalDays);
+    if (!Number.isFinite(interval) || interval <= 0) {
+      setError("물주기 주기는 1일 이상으로 입력해주세요.");
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+    try {
+      await onSave({
+        nickname: nickname.trim(),
+        wateringIntervalDays: interval,
+        scientificName: scientificName.trim(),
+        plantType: plantType.trim(),
+        startedAt,
+        memo: memo.trim()
+      });
+    } catch {
+      setError("저장하지 못했어요. 잠시 뒤 다시 시도해주세요.");
+      setSaving(false);
+    }
+  };
+
+  return (
+    <BottomSheet title="식물 수정" onClose={onClose}>
+      <div className="space-y-5">
+        <EditField label="표시 이름" required value={nickname} onChange={setNickname} />
+        <EditField label="물주기 주기" required type="number" suffix="일" value={wateringIntervalDays} onChange={setWateringIntervalDays} />
+        <EditField label="정식 식물명" value={scientificName} onChange={setScientificName} />
+        <EditField label="식물 종류" value={plantType} onChange={setPlantType} />
+        <EditField label="시작일" type="date" value={startedAt} onChange={setStartedAt} />
+        <label className="block">
+          <span className="mb-2 block text-sm font-medium text-neutral-700">메모</span>
+          <textarea
+            className="min-h-28 w-full resize-none rounded-md border border-neutral-200 bg-white p-3 text-base outline-none focus:border-neutral-500"
+            value={memo}
+            onChange={(event) => setMemo(event.target.value)}
+          />
+        </label>
+        {error ? <p className="text-sm text-red-500">{error}</p> : null}
+        <button className="h-12 w-full rounded-md bg-neutral-900 text-sm font-semibold text-white" type="button" onClick={save} disabled={saving}>
+          {saving ? "저장 중" : "저장"}
+        </button>
+      </div>
+    </BottomSheet>
+  );
+}
+
+function EditField({
+  label,
+  required,
+  type = "text",
+  suffix,
+  value,
+  onChange
+}: {
+  label: string;
+  required?: boolean;
+  type?: string;
+  suffix?: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-sm font-medium text-neutral-700">
+        {label}
+        {required ? <span className="text-neutral-900"> *</span> : null}
+      </span>
+      <div className="flex h-12 w-full items-center overflow-hidden rounded-md border border-neutral-200 bg-white px-3 focus-within:border-neutral-500">
+        <input
+          className="h-full min-w-0 flex-1 bg-transparent text-base text-neutral-900 outline-none"
+          type={type}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+        />
+        {suffix ? <span className="text-sm text-neutral-400">{suffix}</span> : null}
+      </div>
+    </label>
+  );
+}
+
+function ConfirmOverlay({
+  title,
+  description,
+  confirmLabel,
+  onCancel,
+  onConfirm
+}: {
+  title: string;
+  description: string;
+  confirmLabel: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-neutral-950/25 px-5">
+      <div className="w-full max-w-sm rounded-lg border border-neutral-200 bg-white p-4 shadow-[0_12px_35px_rgba(0,0,0,0.08)]">
+        <h3 className="text-base font-semibold text-neutral-900">{title}</h3>
+        <p className="mt-2 text-sm leading-6 text-neutral-500">{description}</p>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <button className="h-10 rounded-md border border-neutral-200 text-sm font-medium text-neutral-700" type="button" onClick={onCancel}>
+            취소
+          </button>
+          <button className="h-10 rounded-md border border-red-100 bg-white text-sm font-semibold text-red-500" type="button" onClick={onConfirm}>
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SavedToast() {
+  return (
+    <div className="pointer-events-none fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-1/2 z-[80] -translate-x-1/2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-800 shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
+      저장되었습니다
+    </div>
   );
 }
 

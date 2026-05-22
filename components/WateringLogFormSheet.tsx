@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Camera, Check } from "lucide-react";
 import { BottomSheet } from "@/components/BottomSheet";
 import { usePlantData } from "@/components/AppProviders";
-import type { Plant, PlantCondition, SoilStatus, WaterAmount } from "@/lib/types";
+import type { Plant, PlantCondition, SoilStatus, WaterAmount, WateringLog } from "@/lib/types";
 
 const soilOptions: { value: SoilStatus; label: string }[] = [
   { value: "dry", label: "말랐음" },
@@ -37,7 +37,7 @@ export function WateringLogFormSheet({
   selectedPlantId?: string;
   selectedDate: string;
   onClose: () => void;
-  onSaved?: () => void;
+  onSaved?: (log: WateringLog | null) => void;
 }) {
   const [plantId, setPlantId] = useState(selectedPlantId ?? plants[0]?.id ?? "");
   const [date, setDate] = useState(selectedDate);
@@ -59,7 +59,7 @@ export function WateringLogFormSheet({
 
     try {
       if (user) {
-        await addWateringLog({
+        const log = await addWateringLog({
           plantId,
           wateredDate: date,
           soilStatus: soil,
@@ -67,10 +67,13 @@ export function WateringLogFormSheet({
           plantConditions: conditions,
           memo
         });
+        setSaved(true);
+        onSaved?.(log);
+      } else {
+        setSaved(true);
+        onSaved?.(null);
       }
 
-      setSaved(true);
-      onSaved?.();
       onClose();
     } catch {
       setError("저장하지 못했어요. 잠시 뒤 다시 시도해주세요.");
