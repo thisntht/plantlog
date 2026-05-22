@@ -40,11 +40,15 @@ const conditionLabels = {
 export function WateringLogDetailSheet({
   log,
   plant,
-  onClose
+  onClose,
+  onSaved,
+  onDeleted
 }: {
   log: WateringLog;
   plant: Plant;
   onClose: () => void;
+  onSaved?: () => void;
+  onDeleted?: () => void;
 }) {
   const { updateWateringLog, deleteWateringLog, user } = usePlantData();
   const [wateredDate, setWateredDate] = useState(log.wateredDate);
@@ -60,6 +64,10 @@ export function WateringLogDetailSheet({
   const showSaved = () => {
     setSaveState("saved");
     setIsEditing(false);
+    if (onSaved) {
+      onSaved();
+      return;
+    }
     setShowSavedToast(true);
     window.setTimeout(() => setShowSavedToast(false), 1400);
   };
@@ -87,6 +95,7 @@ export function WateringLogDetailSheet({
 
   const remove = async () => {
     await deleteWateringLog(log.id);
+    onDeleted?.();
     onClose();
   };
 

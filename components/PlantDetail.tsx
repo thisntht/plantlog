@@ -24,15 +24,15 @@ export function PlantDetail({ plant }: { plant: Plant }) {
   const [adding, setAdding] = useState(false);
   const [editingPlant, setEditingPlant] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [showSavedToast, setShowSavedToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
   const foundPlant = plants.find((item) => item.id === plant.id);
   const activePlant = foundPlant ?? plant;
   const logs = getPlantLogs(activePlant.id, wateringLogs);
   const lastWatered = getLastWateredDate(activePlant.id, wateringLogs);
   const suggestion = getWateringIntervalSuggestion(activePlant, wateringLogs);
-  const showSaved = () => {
-    setShowSavedToast(true);
-    window.setTimeout(() => setShowSavedToast(false), 1400);
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    window.setTimeout(() => setToastMessage(""), 1400);
   };
   const removePlant = async () => {
     await deletePlant(activePlant.id);
@@ -120,9 +120,23 @@ export function PlantDetail({ plant }: { plant: Plant }) {
       {tab === "calendar" ? <PlantMiniCalendar logs={logs} onSelect={setSelectedLog} /> : null}
       {tab === "album" ? <Album logs={logs} onSelect={setSelectedLog} /> : null}
 
-      {selectedLog ? <WateringLogDetailSheet log={selectedLog} plant={activePlant} onClose={() => setSelectedLog(null)} /> : null}
+      {selectedLog ? (
+        <WateringLogDetailSheet
+          log={selectedLog}
+          plant={activePlant}
+          onClose={() => setSelectedLog(null)}
+          onSaved={() => showToast("저장되었습니다")}
+          onDeleted={() => showToast("삭제되었습니다")}
+        />
+      ) : null}
       {adding ? (
-        <WateringLogFormSheet plants={plants} selectedPlantId={activePlant.id} selectedDate={todayISO()} onClose={() => setAdding(false)} onSaved={showSaved} />
+        <WateringLogFormSheet
+          plants={plants}
+          selectedPlantId={activePlant.id}
+          selectedDate={todayISO()}
+          onClose={() => setAdding(false)}
+          onSaved={() => showToast("저장되었습니다")}
+        />
       ) : null}
       {editingPlant ? (
         <PlantEditSheet
@@ -131,7 +145,7 @@ export function PlantDetail({ plant }: { plant: Plant }) {
           onSave={async (input) => {
             await updatePlant(activePlant.id, input);
             setEditingPlant(false);
-            showSaved();
+            showToast("저장되었습니다");
           }}
         />
       ) : null}
@@ -144,7 +158,7 @@ export function PlantDetail({ plant }: { plant: Plant }) {
           onConfirm={() => void removePlant()}
         />
       ) : null}
-      {showSavedToast ? <SavedToast /> : null}
+      {toastMessage ? <Toast message={toastMessage} /> : null}
     </>
   );
 }
@@ -285,10 +299,10 @@ function ConfirmOverlay({
   );
 }
 
-function SavedToast() {
+function Toast({ message }: { message: string }) {
   return (
     <div className="pointer-events-none fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-1/2 z-[80] -translate-x-1/2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-800 shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
-      저장되었습니다
+      {message}
     </div>
   );
 }

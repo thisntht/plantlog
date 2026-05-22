@@ -19,7 +19,7 @@ export function MonthlyCalendar() {
   const [selected, setSelected] = useState<DateBucket | null>(null);
   const [selectedLog, setSelectedLog] = useState<WateringLog | null>(null);
   const [adding, setAdding] = useState(false);
-  const [showSavedToast, setShowSavedToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
   const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
   const [sheetTouchStart, setSheetTouchStart] = useState<{ x: number; y: number } | null>(null);
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
@@ -63,12 +63,12 @@ export function MonthlyCalendar() {
     if (!selected) return;
     selectDate(addDays(new Date(`${selected.date}T00:00:00`), amount));
   };
-  const showSaved = () => {
-    setShowSavedToast(true);
-    window.setTimeout(() => setShowSavedToast(false), 1400);
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    window.setTimeout(() => setToastMessage(""), 1400);
   };
   const handleLogSaved = (log: WateringLog | null) => {
-    showSaved();
+    showToast("저장되었습니다");
     if (!selected) return;
 
     const nextLogs = log ? [...wateringLogs.filter((item) => item.id !== log.id), log] : wateringLogs;
@@ -180,21 +180,27 @@ export function MonthlyCalendar() {
       ) : null}
 
       {selectedLog && selectedLogPlant ? (
-        <WateringLogDetailSheet log={selectedLog} plant={selectedLogPlant} onClose={() => setSelectedLog(null)} />
+        <WateringLogDetailSheet
+          log={selectedLog}
+          plant={selectedLogPlant}
+          onClose={() => setSelectedLog(null)}
+          onSaved={() => showToast("저장되었습니다")}
+          onDeleted={() => showToast("삭제되었습니다")}
+        />
       ) : null}
 
       {selected && adding ? (
         <WateringLogFormSheet plants={plants} selectedDate={selected.date} onClose={() => setAdding(false)} onSaved={handleLogSaved} />
       ) : null}
-      {showSavedToast ? <SavedToast /> : null}
+      {toastMessage ? <Toast message={toastMessage} /> : null}
     </>
   );
 }
 
-function SavedToast() {
+function Toast({ message }: { message: string }) {
   return (
     <div className="pointer-events-none fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-1/2 z-[60] -translate-x-1/2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-800 shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
-      저장되었습니다
+      {message}
     </div>
   );
 }
