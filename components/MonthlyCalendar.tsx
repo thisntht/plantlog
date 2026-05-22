@@ -294,11 +294,11 @@ function MonthPickerSheet({
             </button>
           ))}
         </div>
-        <div className="h-56 overflow-y-auto rounded-md border border-neutral-200 bg-neutral-50 p-1">
+        <div className="grid grid-cols-3 gap-2">
           {months.map((monthValue) => (
             <button
-              className={`h-10 w-full rounded text-sm ${
-                monthValue === selectedMonth ? "bg-white font-semibold text-neutral-950" : "text-neutral-500"
+              className={`h-12 rounded-md border text-sm ${
+                monthValue === selectedMonth ? "border-neutral-900 bg-neutral-100 font-semibold text-neutral-950" : "border-neutral-200 text-neutral-500"
               }`}
               key={monthValue}
               type="button"
