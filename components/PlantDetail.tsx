@@ -18,7 +18,7 @@ type Tab = "list" | "calendar" | "album";
 
 export function PlantDetail({ plant }: { plant: Plant }) {
   const router = useRouter();
-  const { plants, wateringLogs, loading, updatePlant, deletePlant } = usePlantData();
+  const { plants, wateringLogs, loading, updatePlant, deletePlant, uploadPlantCover } = usePlantData();
   const [tab, setTab] = useState<Tab>("list");
   const [selectedLog, setSelectedLog] = useState<WateringLog | null>(null);
   const [adding, setAdding] = useState(false);
@@ -143,7 +143,8 @@ export function PlantDetail({ plant }: { plant: Plant }) {
           plant={activePlant}
           onClose={() => setEditingPlant(false)}
           onSave={async (input) => {
-            await updatePlant(activePlant.id, input);
+            const coverImageUrl = input.coverFile ? await uploadPlantCover(input.coverFile) : input.coverImageUrl;
+            await updatePlant(activePlant.id, { ...input, coverImageUrl });
             setEditingPlant(false);
             showToast("저장되었습니다");
           }}
@@ -170,6 +171,8 @@ function PlantEditSheet({ plant, onClose, onSave }: { plant: Plant; onClose: () 
   plantType?: string;
   startedAt: string;
   memo?: string;
+  coverImageUrl?: string;
+  coverFile?: File | null;
 }) => Promise<void> }) {
   const [nickname, setNickname] = useState(plant.nickname);
   const [wateringIntervalDays, setWateringIntervalDays] = useState(String(plant.wateringIntervalDays));
@@ -177,6 +180,8 @@ function PlantEditSheet({ plant, onClose, onSave }: { plant: Plant; onClose: () 
   const [plantType, setPlantType] = useState(plant.plantType ?? "");
   const [startedAt, setStartedAt] = useState(plant.startedAt);
   const [memo, setMemo] = useState(plant.memo ?? "");
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = useState(plant.coverImageUrl ?? "");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -201,7 +206,9 @@ function PlantEditSheet({ plant, onClose, onSave }: { plant: Plant; onClose: () 
         scientificName: scientificName.trim(),
         plantType: plantType.trim(),
         startedAt,
-        memo: memo.trim()
+        memo: memo.trim(),
+        coverImageUrl: plant.coverImageUrl,
+        coverFile
       });
     } catch {
       setError("저장하지 못했어요. 잠시 뒤 다시 시도해주세요.");
@@ -223,6 +230,20 @@ function PlantEditSheet({ plant, onClose, onSave }: { plant: Plant; onClose: () 
             className="min-h-28 w-full resize-none rounded-md border border-neutral-200 bg-white p-3 text-base outline-none focus:border-neutral-500"
             value={memo}
             onChange={(event) => setMemo(event.target.value)}
+          />
+        </label>
+        {coverPreview ? <img alt="대표 사진 미리보기" className="aspect-[4/3] w-full rounded-lg object-cover" src={coverPreview} /> : null}
+        <label className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-neutral-300 text-sm font-medium text-neutral-500">
+          대표 사진 변경
+          <input
+            className="sr-only"
+            type="file"
+            accept="image/*"
+            onChange={(event) => {
+              const file = event.target.files?.[0] ?? null;
+              setCoverFile(file);
+              setCoverPreview(file ? URL.createObjectURL(file) : plant.coverImageUrl ?? "");
+            }}
           />
         </label>
         {error ? <p className="text-sm text-red-500">{error}</p> : null}

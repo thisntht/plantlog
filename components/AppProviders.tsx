@@ -15,6 +15,7 @@ type NewPlantInput = {
   plantType?: string;
   startedAt: string;
   memo?: string;
+  coverImageUrl?: string;
 };
 
 type UpdatePlantInput = Partial<NewPlantInput>;
@@ -50,6 +51,7 @@ type PlantDataContextValue = {
   addPlant: (input: NewPlantInput) => Promise<Plant | null>;
   updatePlant: (plantId: string, input: UpdatePlantInput) => Promise<void>;
   deletePlant: (plantId: string) => Promise<void>;
+  uploadPlantCover: (file: File) => Promise<string>;
   addWateringLog: (input: NewWateringLogInput) => Promise<WateringLog | null>;
   updateWateringLog: (logId: string, input: UpdateWateringLogInput) => Promise<void>;
   deleteWateringLog: (logId: string) => Promise<void>;
@@ -151,7 +153,8 @@ export function AppProviders({ children }: { children: ReactNode }) {
         plant_type: input.plantType || null,
         watering_interval_days: input.wateringIntervalDays,
         started_at: input.startedAt,
-        memo: input.memo || null
+        memo: input.memo || null,
+        cover_image_url: input.coverImageUrl || null
         })
         .select("*")
         .single();
@@ -161,6 +164,25 @@ export function AppProviders({ children }: { children: ReactNode }) {
       return data ? mapPlant(data) : null;
     },
     [refresh, supabase, user]
+  );
+
+  const uploadPlantCover = useCallback(
+    async (file: File) => {
+      if (!supabase || !user) throw new Error("로그인이 필요합니다.");
+
+      const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${user.id}/plant-covers/${crypto.randomUUID()}.${extension}`;
+      const { error } = await supabase.storage.from("plant-photos").upload(path, file, {
+        cacheControl: "3600",
+        upsert: false
+      });
+
+      if (error) throw error;
+
+      const { data } = supabase.storage.from("plant-photos").getPublicUrl(path);
+      return data.publicUrl;
+    },
+    [supabase, user]
   );
 
   const addWateringLog = useCallback(
@@ -198,7 +220,8 @@ export function AppProviders({ children }: { children: ReactNode }) {
         plant_type: input.plantType ?? null,
         watering_interval_days: input.wateringIntervalDays,
         started_at: input.startedAt,
-        memo: input.memo ?? null
+        memo: input.memo ?? null,
+        cover_image_url: input.coverImageUrl
       };
 
       const { error } = await supabase.from("plants").update(payload).eq("id", plantId).eq("user_id", user.id);
@@ -301,6 +324,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
       addPlant,
       updatePlant,
       deletePlant,
+      uploadPlantCover,
       addWateringLog,
       updateWateringLog,
       deleteWateringLog,
@@ -324,6 +348,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
       updateNotificationTime,
       updatePlant,
       updateWateringLog,
+      uploadPlantCover,
       user,
       wateringLogs
     ]

@@ -101,6 +101,78 @@ grant select, insert, update, delete on public.watering_logs to authenticated;
 grant select, insert, update, delete on public.watering_log_photos to authenticated;
 grant select, insert, update, delete on public.plant_snoozes to authenticated;
 
+insert into storage.buckets (id, name, public)
+values ('plant-photos', 'plant-photos', true)
+on conflict (id) do update set public = true;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'storage'
+      and tablename = 'objects'
+      and policyname = 'plant photos are readable'
+  ) then
+    create policy "plant photos are readable" on storage.objects
+      for select using (bucket_id = 'plant-photos');
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'storage'
+      and tablename = 'objects'
+      and policyname = 'users can upload own plant photos'
+  ) then
+    create policy "users can upload own plant photos" on storage.objects
+      for insert to authenticated
+      with check (
+        bucket_id = 'plant-photos'
+        and (storage.foldername(name))[1] = auth.uid()::text
+      );
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'storage'
+      and tablename = 'objects'
+      and policyname = 'users can update own plant photos'
+  ) then
+    create policy "users can update own plant photos" on storage.objects
+      for update to authenticated
+      using (
+        bucket_id = 'plant-photos'
+        and (storage.foldername(name))[1] = auth.uid()::text
+      )
+      with check (
+        bucket_id = 'plant-photos'
+        and (storage.foldername(name))[1] = auth.uid()::text
+      );
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'storage'
+      and tablename = 'objects'
+      and policyname = 'users can delete own plant photos'
+  ) then
+    create policy "users can delete own plant photos" on storage.objects
+      for delete to authenticated
+      using (
+        bucket_id = 'plant-photos'
+        and (storage.foldername(name))[1] = auth.uid()::text
+      );
+  end if;
+end $$;
+
 create index if not exists plants_user_id_idx on public.plants(user_id);
 create index if not exists watering_logs_user_plant_date_idx on public.watering_logs(user_id, plant_id, watered_date desc);
 create index if not exists plant_snoozes_plant_id_idx on public.plant_snoozes(plant_id);

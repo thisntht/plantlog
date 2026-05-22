@@ -9,13 +9,15 @@ import type { Plant } from "@/lib/types";
 
 export function PlantForm({ onSaved, variant = "page" }: { onSaved?: (plant: Plant | null) => void; variant?: "page" | "sheet" }) {
   const router = useRouter();
-  const { addPlant, isDemo, user } = usePlantData();
+  const { addPlant, isDemo, user, uploadPlantCover } = usePlantData();
   const [nickname, setNickname] = useState("");
   const [wateringIntervalDays, setWateringIntervalDays] = useState("");
   const [scientificName, setScientificName] = useState("");
   const [plantType, setPlantType] = useState("");
   const [startedAt, setStartedAt] = useState(todayISO());
   const [memo, setMemo] = useState("");
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -45,13 +47,15 @@ export function PlantForm({ onSaved, variant = "page" }: { onSaved?: (plant: Pla
     setError("");
 
     try {
+      const coverImageUrl = coverFile ? await uploadPlantCover(coverFile) : undefined;
       const plant = await addPlant({
         nickname: nickname.trim(),
         wateringIntervalDays: interval,
         scientificName: scientificName.trim(),
         plantType: plantType.trim(),
         startedAt,
-        memo: memo.trim()
+        memo: memo.trim(),
+        coverImageUrl
       });
       if (onSaved) {
         onSaved(plant);
@@ -81,10 +85,21 @@ export function PlantForm({ onSaved, variant = "page" }: { onSaved?: (plant: Pla
           onChange={(event) => setMemo(event.target.value)}
         />
       </label>
-      <button className="flex h-12 w-full items-center justify-center gap-2 rounded-lg border border-dashed border-neutral-300 text-sm font-medium text-neutral-500" type="button">
+      {coverPreview ? <img alt="대표 사진 미리보기" className="aspect-[4/3] w-full rounded-lg object-cover" src={coverPreview} /> : null}
+      <label className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-neutral-300 text-sm font-medium text-neutral-500">
         <Camera aria-hidden className="h-4 w-4" />
-        대표 사진
-      </button>
+        {coverFile ? "대표 사진 변경" : "대표 사진"}
+        <input
+          className="sr-only"
+          type="file"
+          accept="image/*"
+          onChange={(event) => {
+            const file = event.target.files?.[0] ?? null;
+            setCoverFile(file);
+            setCoverPreview(file ? URL.createObjectURL(file) : "");
+          }}
+        />
+      </label>
       {isDemo ? <p className="text-sm leading-6 text-neutral-500">로그인 전에는 저장되지 않습니다. Google 로그인 후 내 식물을 추가할 수 있어요.</p> : null}
       {error ? <p className="text-sm text-red-500">{error}</p> : null}
       <button className="flex h-12 w-full items-center justify-center gap-2 rounded-md bg-neutral-900 text-sm font-semibold text-white" type="button" onClick={save} disabled={saving}>
