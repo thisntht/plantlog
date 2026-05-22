@@ -67,7 +67,10 @@ export default function MyPage() {
           description="다시 사용하려면 Google 로그인이 필요합니다."
           confirmLabel="로그아웃"
           onCancel={() => setLogoutConfirmOpen(false)}
-          onConfirm={() => void signOut()}
+          onConfirm={() => {
+            setLogoutConfirmOpen(false);
+            void signOut();
+          }}
         />
       ) : null}
     </AppShell>
