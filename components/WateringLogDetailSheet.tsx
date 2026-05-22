@@ -57,13 +57,20 @@ export function WateringLogDetailSheet({
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [showSavedToast, setShowSavedToast] = useState(false);
 
+  const showSaved = () => {
+    setSaveState("saved");
+    setIsEditing(false);
+    setShowSavedToast(true);
+    window.setTimeout(() => setShowSavedToast(false), 1400);
+  };
+
   const toggleCondition = (value: PlantCondition) => {
     setPlantConditions((current) => (current.includes(value) ? current.filter((item) => item !== value) : [...current, value]));
   };
 
   const save = async () => {
     if (!user) {
-      setIsEditing(false);
+      showSaved();
       return;
     }
 
@@ -75,10 +82,7 @@ export function WateringLogDetailSheet({
       plantConditions,
       memo
     });
-    setSaveState("saved");
-    setIsEditing(false);
-    setShowSavedToast(true);
-    window.setTimeout(() => setShowSavedToast(false), 1400);
+    showSaved();
   };
 
   const remove = async () => {
