@@ -15,6 +15,7 @@ type SortMode = "needs" | "name";
 export function PlantList() {
   const [sort, setSort] = useState<SortMode>("needs");
   const [adding, setAdding] = useState(false);
+  const [showSavedToast, setShowSavedToast] = useState(false);
   const { plants, wateringLogs, isDemo } = usePlantData();
   const today = todayISO();
   const sortedPlants = useMemo(() => {
@@ -23,6 +24,10 @@ export function PlantList() {
       return getNextWateringDate(a, wateringLogs).localeCompare(getNextWateringDate(b, wateringLogs));
     });
   }, [plants, sort, wateringLogs]);
+  const showSaved = () => {
+    setShowSavedToast(true);
+    window.setTimeout(() => setShowSavedToast(false), 1400);
+  };
 
   return (
     <>
@@ -77,10 +82,25 @@ export function PlantList() {
       </div>
       {adding ? (
         <BottomSheet title="식물 등록" onClose={() => setAdding(false)}>
-          <PlantForm variant="sheet" onSaved={() => setAdding(false)} />
+          <PlantForm
+            variant="sheet"
+            onSaved={() => {
+              setAdding(false);
+              showSaved();
+            }}
+          />
         </BottomSheet>
       ) : null}
+      {showSavedToast ? <SavedToast /> : null}
     </>
+  );
+}
+
+function SavedToast() {
+  return (
+    <div className="pointer-events-none fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-1/2 z-[60] -translate-x-1/2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-800 shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
+      저장되었습니다
+    </div>
   );
 }
 

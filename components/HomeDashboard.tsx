@@ -135,7 +135,13 @@ export function HomeDashboard() {
       ) : null}
       {addingPlant ? (
         <BottomSheet title="식물 등록" onClose={() => setAddingPlant(false)}>
-          <PlantForm variant="sheet" onSaved={() => setAddingPlant(false)} />
+          <PlantForm
+            variant="sheet"
+            onSaved={() => {
+              setAddingPlant(false);
+              showSaved();
+            }}
+          />
         </BottomSheet>
       ) : null}
       {showSavedToast ? <SavedToast /> : null}
