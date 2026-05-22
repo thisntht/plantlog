@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { addDays, addMonths, format, getDay } from "date-fns";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { ChevronRight, Plus } from "lucide-react";
 import { usePlantData } from "@/components/AppProviders";
 import { BottomSheet } from "@/components/BottomSheet";
 import { WateringLogDetailSheet } from "@/components/WateringLogDetailSheet";
@@ -69,32 +69,17 @@ export function MonthlyCalendar() {
   return (
     <>
       <header className="mb-3">
-        <div className="flex items-center justify-between">
+        <div>
           <button
-            className="flex h-10 w-10 items-center justify-center rounded-md text-neutral-400 hover:bg-neutral-50 hover:text-neutral-600"
-            type="button"
-            aria-label="이전 달"
-            onClick={() => moveMonth(-1)}
-          >
-            <ChevronLeft aria-hidden className="h-5 w-5" />
-          </button>
-          <button
-            className="rounded-md px-3 py-2 text-2xl font-semibold text-neutral-900 hover:bg-neutral-50"
+            className="inline-flex items-center gap-1 rounded-md py-1 pr-2 text-2xl font-semibold text-neutral-900 hover:bg-neutral-50"
             type="button"
             onClick={() => setMonthPickerOpen(true)}
           >
             {format(month, "yyyy.MM")}
-          </button>
-          <button
-            className="flex h-10 w-10 items-center justify-center rounded-md text-neutral-400 hover:bg-neutral-50 hover:text-neutral-600"
-            type="button"
-            aria-label="다음 달"
-            onClick={() => moveMonth(1)}
-          >
-            <ChevronRight aria-hidden className="h-5 w-5" />
+            <span className="text-sm text-neutral-400">▼</span>
           </button>
         </div>
-        <p className="mt-1 text-center text-sm leading-6 text-neutral-500">기록은 진하게, 예정된 물주기는 조용하게 표시됩니다.</p>
+        <p className="mt-1 text-sm leading-6 text-neutral-500">기록은 진하게, 예정된 물주기는 조용하게 표시됩니다.</p>
       </header>
 
       <section
@@ -242,23 +227,19 @@ function DateDetailSheet({
       <button className="absolute inset-0 cursor-default" aria-label="닫기" onClick={onClose} />
       <div className="relative z-10 mx-auto flex h-full max-w-md flex-col">
         <div className="mb-5 text-white">
-          {isToday ? <p className="mb-2 text-sm font-bold uppercase tracking-wide">TODAY</p> : null}
-          <div className="flex items-end gap-2">
-            <h2 className="text-4xl font-bold">{format(date, "M월 d일")}</h2>
-            <span className="pb-1 text-xl font-medium">{weekdays[getDay(date)]}</span>
+          <div className="h-6">{isToday ? <p className="text-sm font-bold uppercase tracking-wide">TODAY</p> : null}</div>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-end gap-2">
+              <h2 className="text-3xl font-bold">{format(date, "M월 d일")}</h2>
+              <span className="pb-0.5 text-lg font-medium">{weekdays[getDay(date)]}</span>
+            </div>
+            <button className="flex h-10 w-10 items-center justify-center rounded-full text-white/85 hover:bg-white/10" type="button" onClick={() => onMoveDate(1)} aria-label="다음 날짜">
+              <ChevronRight aria-hidden className="h-6 w-6" />
+            </button>
           </div>
         </div>
 
         <section className="relative min-h-0 flex-1 rounded-[1.6rem] bg-white p-5">
-          <div className="mb-4 flex justify-center gap-2">
-            <button className="rounded-full border border-neutral-200 px-3 py-1 text-sm text-neutral-500" type="button" onClick={() => onMoveDate(-1)}>
-              이전
-            </button>
-            {isToday ? <span className="rounded-full bg-neutral-900 px-3 py-1 text-sm font-semibold text-white">오늘</span> : null}
-            <button className="rounded-full border border-neutral-200 px-3 py-1 text-sm text-neutral-500" type="button" onClick={() => onMoveDate(1)}>
-              다음
-            </button>
-          </div>
           <div className="max-h-[calc(100%-5rem)] overflow-y-auto pb-20">
             <LogGroup title="기록" logs={bucket.actualLogs} plants={plants} onSelectLog={onSelectLog} />
             <section className="mt-5">
@@ -316,11 +297,11 @@ function MonthPickerSheet({
             </button>
           ))}
         </div>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="h-56 overflow-y-auto rounded-md border border-neutral-200 bg-neutral-50 p-1">
           {months.map((monthValue) => (
             <button
-              className={`h-12 rounded-md border text-sm ${
-                monthValue === selectedMonth ? "border-neutral-900 bg-neutral-100 font-semibold text-neutral-950" : "border-neutral-200 text-neutral-500"
+              className={`h-10 w-full rounded text-sm ${
+                monthValue === selectedMonth ? "bg-white font-semibold text-neutral-950" : "text-neutral-500"
               }`}
               key={monthValue}
               type="button"
