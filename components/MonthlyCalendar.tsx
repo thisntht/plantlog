@@ -220,9 +220,6 @@ function DateDetailSheet({
       aria-modal="true"
       onTouchStart={(event) => onTouchStart(event.touches[0]?.clientX ?? 0)}
       onTouchEnd={(event) => onTouchEnd(event.changedTouches[0]?.clientX ?? 0)}
-      onWheel={(event) => {
-        if (Math.abs(event.deltaY) > 24) onMoveDate(event.deltaY > 0 ? 1 : -1);
-      }}
     >
       <button className="absolute inset-0 cursor-default" aria-label="닫기" onClick={onClose} />
       <div className="relative z-10 mx-auto flex h-full max-w-md flex-col">
