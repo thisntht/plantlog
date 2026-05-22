@@ -10,7 +10,7 @@ export function PlantForm() {
   const router = useRouter();
   const { addPlant, isDemo, user } = usePlantData();
   const [nickname, setNickname] = useState("");
-  const [wateringIntervalDays, setWateringIntervalDays] = useState("7");
+  const [wateringIntervalDays, setWateringIntervalDays] = useState("");
   const [scientificName, setScientificName] = useState("");
   const [plantType, setPlantType] = useState("");
   const [startedAt, setStartedAt] = useState(todayISO());
@@ -21,6 +21,17 @@ export function PlantForm() {
   const save = async () => {
     if (!nickname.trim()) {
       setError("표시 이름을 입력해주세요.");
+      return;
+    }
+
+    if (!wateringIntervalDays.trim()) {
+      setError("물주기 주기를 입력해주세요.");
+      return;
+    }
+
+    const interval = Number(wateringIntervalDays);
+    if (!Number.isFinite(interval) || interval <= 0) {
+      setError("물주기 주기는 1일 이상으로 입력해주세요.");
       return;
     }
 
@@ -35,7 +46,7 @@ export function PlantForm() {
     try {
       const plant = await addPlant({
         nickname: nickname.trim(),
-        wateringIntervalDays: Number(wateringIntervalDays) || 7,
+        wateringIntervalDays: interval,
         scientificName: scientificName.trim(),
         plantType: plantType.trim(),
         startedAt,
