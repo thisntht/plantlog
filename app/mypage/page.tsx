@@ -14,6 +14,7 @@ export default function MyPage() {
   const { user, signOut, isDemo, notificationTime, updateNotificationTime } = usePlantData();
   const [selectedHour, selectedMinute] = notificationTime.split(":");
   const [timeSheetOpen, setTimeSheetOpen] = useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
 
   return (
     <AppShell>
@@ -48,7 +49,7 @@ export default function MyPage() {
         <SettingRow icon={<Lock className="h-4 w-4" />} label="공개 여부" value={profile.isPublic ? "공개" : "비공개"} />
       </section>
       {user ? (
-        <button className="mt-4 h-12 w-full rounded-lg bg-neutral-900 text-sm font-semibold text-white" type="button" onClick={() => void signOut()}>
+        <button className="mt-4 h-12 w-full rounded-lg bg-neutral-900 text-sm font-semibold text-white" type="button" onClick={() => setLogoutConfirmOpen(true)}>
           로그아웃
         </button>
       ) : null}
@@ -58,6 +59,15 @@ export default function MyPage() {
           minute={selectedMinute ?? "00"}
           onChange={(time) => void updateNotificationTime(time)}
           onClose={() => setTimeSheetOpen(false)}
+        />
+      ) : null}
+      {logoutConfirmOpen ? (
+        <ConfirmOverlay
+          title="로그아웃할까요?"
+          description="다시 사용하려면 Google 로그인이 필요합니다."
+          confirmLabel="로그아웃"
+          onCancel={() => setLogoutConfirmOpen(false)}
+          onConfirm={() => void signOut()}
         />
       ) : null}
     </AppShell>
@@ -137,6 +147,37 @@ function SettingRow({ icon, label, value }: { icon: ReactNode; label: string; va
       <span className="text-neutral-500">{icon}</span>
       <span className="flex-1 text-sm font-medium text-neutral-800">{label}</span>
       <span className="text-sm text-neutral-500">{value}</span>
+    </div>
+  );
+}
+
+function ConfirmOverlay({
+  title,
+  description,
+  confirmLabel,
+  onCancel,
+  onConfirm
+}: {
+  title: string;
+  description: string;
+  confirmLabel: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/25 px-5 backdrop-blur-sm" role="dialog" aria-modal="true">
+      <div className="w-full max-w-sm rounded-lg border border-neutral-200 bg-white p-4 shadow-[0_12px_35px_rgba(0,0,0,0.08)]">
+        <h3 className="text-base font-semibold text-neutral-900">{title}</h3>
+        <p className="mt-2 text-sm leading-6 text-neutral-500">{description}</p>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <button className="h-10 rounded-md border border-neutral-200 text-sm font-medium text-neutral-700" type="button" onClick={onCancel}>
+            취소
+          </button>
+          <button className="h-10 rounded-md border border-red-100 bg-white text-sm font-semibold text-red-500" type="button" onClick={onConfirm}>
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
