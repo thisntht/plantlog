@@ -20,7 +20,7 @@ export function MonthlyCalendar() {
   const [selectedLog, setSelectedLog] = useState<WateringLog | null>(null);
   const [adding, setAdding] = useState(false);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
-  const [sheetTouchStartX, setSheetTouchStartX] = useState<number | null>(null);
+  const [sheetTouchStart, setSheetTouchStart] = useState<{ x: number; y: number } | null>(null);
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
   const wheelLockRef = useRef<number | null>(null);
   const buckets = useMemo(() => buildMonthBuckets(month, plants, wateringLogs), [month, plants, wateringLogs]);
@@ -59,11 +59,14 @@ export function MonthlyCalendar() {
     if (!selected) return;
     selectDate(addDays(new Date(`${selected.date}T00:00:00`), amount));
   };
-  const handleSheetSwipeEnd = (clientX: number) => {
-    if (sheetTouchStartX === null) return;
-    const distance = clientX - sheetTouchStartX;
-    if (Math.abs(distance) > 48) moveSelectedDate(distance < 0 ? 1 : -1);
-    setSheetTouchStartX(null);
+  const handleSheetSwipeEnd = (clientX: number, clientY: number) => {
+    if (!sheetTouchStart) return;
+    const distanceX = clientX - sheetTouchStart.x;
+    const distanceY = clientY - sheetTouchStart.y;
+    if (Math.abs(distanceX) > 56 && Math.abs(distanceX) > Math.abs(distanceY) * 1.5) {
+      moveSelectedDate(distanceX < 0 ? 1 : -1);
+    }
+    setSheetTouchStart(null);
   };
 
   return (
@@ -138,7 +141,7 @@ export function MonthlyCalendar() {
             setSelectedLog(log);
             setSelected(null);
           }}
-          onTouchStart={(clientX) => setSheetTouchStartX(clientX)}
+          onTouchStart={(point) => setSheetTouchStart(point)}
           onTouchEnd={handleSheetSwipeEnd}
         />
       ) : null}
@@ -207,8 +210,8 @@ function DateDetailSheet({
   onClose: () => void;
   onMoveDate: (amount: number) => void;
   onSelectLog: (log: WateringLog) => void;
-  onTouchStart: (clientX: number) => void;
-  onTouchEnd: (clientX: number) => void;
+  onTouchStart: (point: { x: number; y: number }) => void;
+  onTouchEnd: (clientX: number, clientY: number) => void;
 }) {
   const date = new Date(`${bucket.date}T00:00:00`);
   const isToday = bucket.date === today;
@@ -218,8 +221,14 @@ function DateDetailSheet({
       className="fixed inset-0 z-50 overflow-hidden bg-neutral-950/35 px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-16 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
-      onTouchStart={(event) => onTouchStart(event.touches[0]?.clientX ?? 0)}
-      onTouchEnd={(event) => onTouchEnd(event.changedTouches[0]?.clientX ?? 0)}
+      onTouchStart={(event) => {
+        const touch = event.touches[0];
+        onTouchStart({ x: touch?.clientX ?? 0, y: touch?.clientY ?? 0 });
+      }}
+      onTouchEnd={(event) => {
+        const touch = event.changedTouches[0];
+        onTouchEnd(touch?.clientX ?? 0, touch?.clientY ?? 0);
+      }}
     >
       <button className="absolute inset-0 cursor-default" aria-label="닫기" onClick={onClose} />
       <div className="relative z-10 mx-auto flex h-full max-w-md flex-col">
