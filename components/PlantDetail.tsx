@@ -36,7 +36,7 @@ export function PlantDetail({ plant }: { plant: Plant }) {
   };
   const removePlant = async () => {
     await deletePlant(activePlant.id);
-    router.push("/plants");
+    router.push("/plants?toast=deleted");
   };
 
   if (loading && !foundPlant) {

@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowDownUp, Plus } from "lucide-react";
 import { BottomSheet } from "@/components/BottomSheet";
 import { PlantForm } from "@/components/PlantForm";
@@ -13,9 +14,11 @@ import { getNextWateringDate } from "@/lib/watering";
 type SortMode = "needs" | "name";
 
 export function PlantList() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [sort, setSort] = useState<SortMode>("needs");
   const [adding, setAdding] = useState(false);
-  const [showSavedToast, setShowSavedToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
   const { plants, wateringLogs, isDemo } = usePlantData();
   const today = todayISO();
   const sortedPlants = useMemo(() => {
@@ -24,10 +27,16 @@ export function PlantList() {
       return getNextWateringDate(a, wateringLogs).localeCompare(getNextWateringDate(b, wateringLogs));
     });
   }, [plants, sort, wateringLogs]);
-  const showSaved = () => {
-    setShowSavedToast(true);
-    window.setTimeout(() => setShowSavedToast(false), 1400);
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    window.setTimeout(() => setToastMessage(""), 1400);
   };
+
+  useEffect(() => {
+    if (searchParams.get("toast") !== "deleted") return;
+    showToast("삭제되었습니다");
+    router.replace("/plants");
+  }, [router, searchParams]);
 
   return (
     <>
@@ -86,20 +95,20 @@ export function PlantList() {
             variant="sheet"
             onSaved={() => {
               setAdding(false);
-              showSaved();
+              showToast("저장되었습니다");
             }}
           />
         </BottomSheet>
       ) : null}
-      {showSavedToast ? <SavedToast /> : null}
+      {toastMessage ? <Toast message={toastMessage} /> : null}
     </>
   );
 }
 
-function SavedToast() {
+function Toast({ message }: { message: string }) {
   return (
     <div className="pointer-events-none fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-1/2 z-[60] -translate-x-1/2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-800 shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
-      저장되었습니다
+      {message}
     </div>
   );
 }
