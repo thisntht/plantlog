@@ -139,9 +139,9 @@ export function WateringLogDetailSheet({
           <>
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-neutral-700">날짜</span>
-              <div className="w-full min-w-0 overflow-hidden rounded-md border border-neutral-200 bg-white focus-within:border-neutral-500">
+              <div className="flex h-11 w-full min-w-0 items-center overflow-hidden rounded-md border border-neutral-200 bg-white focus-within:border-neutral-500">
                 <input
-                  className="block h-11 w-full min-w-0 appearance-none bg-transparent px-3 text-center text-base text-neutral-900 outline-none"
+                  className="block h-full w-full min-w-0 appearance-none bg-transparent px-3 text-center text-base leading-[2.75rem] text-neutral-900 outline-none"
                   type="date"
                   value={wateredDate}
                   onChange={(event) => setWateredDate(event.target.value)}
