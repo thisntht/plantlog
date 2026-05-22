@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { addMonths, endOfMonth, format, getDay, startOfMonth } from "date-fns";
-import { CalendarDays, ChevronLeft, ChevronRight, Droplets, Edit3, ImageIcon, List, Settings2, Trash2 } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Droplets, Edit3, ImageIcon, List, Settings2, Trash2, X } from "lucide-react";
 import { usePlantData } from "@/components/AppProviders";
 import { BottomSheet } from "@/components/BottomSheet";
 import { PlantAvatar } from "@/components/PlantAvatar";
@@ -430,17 +430,67 @@ function PlantMiniCalendar({ logs, onSelect }: { logs: WateringLog[]; onSelect: 
 
 function Album({ logs, onSelect }: { logs: WateringLog[]; onSelect: (log: WateringLog) => void }) {
   const photos = logs.flatMap((log) => log.photos.map((photo) => ({ photo, log })));
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const selected = selectedIndex === null ? null : photos[selectedIndex];
+
   if (photos.length === 0) {
     return <p className="rounded-lg border border-neutral-200 bg-white p-4 text-sm text-neutral-500">아직 사진 기록이 없어요.</p>;
   }
 
   return (
-    <div className="grid grid-cols-3 gap-2">
-      {photos.map(({ photo, log }) => (
-        <button className="overflow-hidden rounded-lg" key={photo.id} type="button" onClick={() => onSelect(log)}>
-          <img alt="" className="aspect-square object-cover" src={photo.imageUrl} />
-        </button>
-      ))}
-    </div>
+    <>
+      <div className="grid grid-cols-3 gap-2">
+        {photos.map(({ photo }, index) => (
+          <button className="overflow-hidden rounded-lg" key={photo.id} type="button" onClick={() => setSelectedIndex(index)}>
+            <img alt="" className="aspect-square object-cover" src={photo.imageUrl} />
+          </button>
+        ))}
+      </div>
+      {selected ? (
+        <div className="fixed inset-0 z-[80] flex flex-col bg-neutral-950/90 px-4 py-[max(1rem,env(safe-area-inset-top))] text-white">
+          <div className="mb-3 flex items-center justify-between">
+            <button className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-white/10" type="button" onClick={() => setSelectedIndex(null)} aria-label="닫기">
+              <X aria-hidden className="h-5 w-5" />
+            </button>
+            <p className="text-sm text-white/70">
+              {(selectedIndex ?? 0) + 1} / {photos.length}
+            </p>
+          </div>
+          <div className="flex min-h-0 flex-1 items-center justify-center">
+            <img alt="" className="max-h-full max-w-full rounded-lg object-contain" src={selected.photo.imageUrl} />
+          </div>
+          <div className="mt-4 grid grid-cols-[3rem_1fr_3rem] items-center gap-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
+            <button
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 disabled:opacity-30"
+              type="button"
+              disabled={selectedIndex === 0}
+              onClick={() => setSelectedIndex((current) => (current === null ? current : Math.max(0, current - 1)))}
+              aria-label="이전 사진"
+            >
+              <ChevronLeft aria-hidden className="h-6 w-6" />
+            </button>
+            <button
+              className="h-12 rounded-md bg-white text-sm font-semibold text-neutral-950"
+              type="button"
+              onClick={() => {
+                onSelect(selected.log);
+                setSelectedIndex(null);
+              }}
+            >
+              이 기록 보기
+            </button>
+            <button
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 disabled:opacity-30"
+              type="button"
+              disabled={selectedIndex === photos.length - 1}
+              onClick={() => setSelectedIndex((current) => (current === null ? current : Math.min(photos.length - 1, current + 1)))}
+              aria-label="다음 사진"
+            >
+              <ChevronRight aria-hidden className="h-6 w-6" />
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }

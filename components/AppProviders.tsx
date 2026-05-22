@@ -27,6 +27,7 @@ type NewWateringLogInput = {
   waterAmount?: WaterAmount;
   plantConditions: PlantCondition[];
   memo?: string;
+  photoFiles?: File[];
 };
 
 type UpdateWateringLogInput = Partial<{
@@ -35,6 +36,8 @@ type UpdateWateringLogInput = Partial<{
   waterAmount: WaterAmount;
   plantConditions: PlantCondition[];
   memo: string;
+  photoFiles: File[];
+  photoIdsToDelete: string[];
 }>;
 
 type PlantDataContextValue = {
@@ -53,7 +56,7 @@ type PlantDataContextValue = {
   deletePlant: (plantId: string) => Promise<void>;
   uploadPlantCover: (file: File) => Promise<string>;
   addWateringLog: (input: NewWateringLogInput) => Promise<WateringLog | null>;
-  updateWateringLog: (logId: string, input: UpdateWateringLogInput) => Promise<void>;
+  updateWateringLog: (logId: string, input: UpdateWateringLogInput) => Promise<WateringLog | null>;
   deleteWateringLog: (logId: string) => Promise<void>;
   snoozePlant: (plantId: string, days: number) => Promise<void>;
   updateNotificationTime: (time: string) => Promise<void>;
@@ -185,6 +188,53 @@ export function AppProviders({ children }: { children: ReactNode }) {
     [supabase, user]
   );
 
+  const uploadWateringLogPhotos = useCallback(
+    async (logId: string, files: File[]) => {
+      if (!supabase || !user || files.length === 0) return;
+
+      const rows: Array<{ watering_log_id: string; image_url: string; storage_path: string }> = [];
+      for (const file of files) {
+        const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+        const path = `${user.id}/watering-logs/${logId}/${crypto.randomUUID()}.${extension}`;
+        const { error } = await supabase.storage.from("plant-photos").upload(path, file, {
+          cacheControl: "3600",
+          upsert: false
+        });
+
+        if (error) throw error;
+        const { data } = supabase.storage.from("plant-photos").getPublicUrl(path);
+        rows.push({
+          watering_log_id: logId,
+          image_url: data.publicUrl,
+          storage_path: path
+        });
+      }
+
+      const { error } = await supabase.from("watering_log_photos").insert(rows);
+      if (error) throw error;
+    },
+    [supabase, user]
+  );
+
+  const deleteWateringLogPhotos = useCallback(
+    async (photoIds: string[]) => {
+      if (!supabase || photoIds.length === 0) return;
+
+      const { data, error: selectError } = await supabase.from("watering_log_photos").select("id, storage_path").in("id", photoIds);
+      if (selectError) throw selectError;
+
+      const paths = (data ?? []).map((photo) => photo.storage_path).filter(Boolean);
+      if (paths.length > 0) {
+        const { error: storageError } = await supabase.storage.from("plant-photos").remove(paths);
+        if (storageError) throw storageError;
+      }
+
+      const { error } = await supabase.from("watering_log_photos").delete().in("id", photoIds);
+      if (error) throw error;
+    },
+    [supabase]
+  );
+
   const addWateringLog = useCallback(
     async (input: NewWateringLogInput) => {
       if (!supabase || !user) return null;
@@ -204,10 +254,23 @@ export function AppProviders({ children }: { children: ReactNode }) {
         .single();
 
       if (error) throw error;
+      if (!data) return null;
+
+      if (input.photoFiles?.length) {
+        await uploadWateringLogPhotos(data.id, input.photoFiles.slice(0, 5));
+      }
+
+      const { data: logWithPhotos, error: logError } = await supabase
+        .from("watering_logs")
+        .select("*, watering_log_photos(*)")
+        .eq("id", data.id)
+        .single();
+      if (logError) throw logError;
+
       await refresh();
-      return data ? mapWateringLog(data) : null;
+      return logWithPhotos ? mapWateringLog(logWithPhotos) : null;
     },
-    [refresh, supabase, user]
+    [refresh, supabase, uploadWateringLogPhotos, user]
   );
 
   const updatePlant = useCallback(
@@ -264,7 +327,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
 
   const updateWateringLog = useCallback(
     async (logId: string, input: UpdateWateringLogInput) => {
-      if (!supabase || !user) return;
+      if (!supabase || !user) return null;
 
       const payload = {
         watered_date: input.wateredDate,
@@ -276,14 +339,33 @@ export function AppProviders({ children }: { children: ReactNode }) {
 
       const { error } = await supabase.from("watering_logs").update(payload).eq("id", logId).eq("user_id", user.id);
       if (error) throw error;
+      await deleteWateringLogPhotos(input.photoIdsToDelete ?? []);
+      await uploadWateringLogPhotos(logId, (input.photoFiles ?? []).slice(0, 5));
+      const { data: logWithPhotos, error: logError } = await supabase
+        .from("watering_logs")
+        .select("*, watering_log_photos(*)")
+        .eq("id", logId)
+        .single();
+      if (logError) throw logError;
+
       await refresh();
+      return logWithPhotos ? mapWateringLog(logWithPhotos) : null;
     },
-    [refresh, supabase, user]
+    [deleteWateringLogPhotos, refresh, supabase, uploadWateringLogPhotos, user]
   );
 
   const deleteWateringLog = useCallback(
     async (logId: string) => {
       if (!supabase || !user) return;
+      const { data: photos, error: photoError } = await supabase.from("watering_log_photos").select("storage_path").eq("watering_log_id", logId);
+      if (photoError) throw photoError;
+
+      const paths = (photos ?? []).map((photo) => photo.storage_path).filter(Boolean);
+      if (paths.length > 0) {
+        const { error: storageError } = await supabase.storage.from("plant-photos").remove(paths);
+        if (storageError) throw storageError;
+      }
+
       const { error } = await supabase.from("watering_logs").delete().eq("id", logId).eq("user_id", user.id);
       if (error) throw error;
       await refresh();

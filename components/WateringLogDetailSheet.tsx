@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Edit3, Trash2, X } from "lucide-react";
+import { Camera, Check, Edit3, Trash2, X } from "lucide-react";
 import { BottomSheet } from "@/components/BottomSheet";
 import { usePlantData } from "@/components/AppProviders";
 import { formatKoreanDate } from "@/lib/date";
-import type { Plant, PlantCondition, SoilStatus, WaterAmount, WateringLog } from "@/lib/types";
+import type { Plant, PlantCondition, SoilStatus, WaterAmount, WateringLog, WateringLogPhoto } from "@/lib/types";
 
 const soilOptions: { value: SoilStatus; label: string }[] = [
   { value: "dry", label: "말랐음" },
@@ -56,6 +56,10 @@ export function WateringLogDetailSheet({
   const [waterAmount, setWaterAmount] = useState<WaterAmount | undefined>(log.waterAmount);
   const [plantConditions, setPlantConditions] = useState<PlantCondition[]>(log.plantConditions);
   const [memo, setMemo] = useState(log.memo ?? "");
+  const [existingPhotos, setExistingPhotos] = useState<WateringLogPhoto[]>(log.photos);
+  const [photoIdsToDelete, setPhotoIdsToDelete] = useState<string[]>([]);
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
+  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const [isEditing, setIsEditing] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -75,6 +79,21 @@ export function WateringLogDetailSheet({
   const toggleCondition = (value: PlantCondition) => {
     setPlantConditions((current) => (current.includes(value) ? current.filter((item) => item !== value) : [...current, value]));
   };
+  const addPhotos = (files: FileList | null) => {
+    const available = Math.max(0, 5 - existingPhotos.length);
+    const nextFiles = [...photoFiles, ...Array.from(files ?? [])].slice(0, available);
+    setPhotoFiles(nextFiles);
+    setPhotoPreviews(nextFiles.map((file) => URL.createObjectURL(file)));
+  };
+  const removeExistingPhoto = (photo: WateringLogPhoto) => {
+    setExistingPhotos((current) => current.filter((item) => item.id !== photo.id));
+    setPhotoIdsToDelete((current) => [...current, photo.id]);
+  };
+  const removeNewPhoto = (index: number) => {
+    const nextFiles = photoFiles.filter((_, itemIndex) => itemIndex !== index);
+    setPhotoFiles(nextFiles);
+    setPhotoPreviews(nextFiles.map((file) => URL.createObjectURL(file)));
+  };
 
   const save = async () => {
     if (!user) {
@@ -83,13 +102,19 @@ export function WateringLogDetailSheet({
     }
 
     setSaveState("saving");
-    await updateWateringLog(log.id, {
+    const updated = await updateWateringLog(log.id, {
       wateredDate,
       soilStatus,
       waterAmount,
       plantConditions,
-      memo
+      memo,
+      photoFiles,
+      photoIdsToDelete
     });
+    if (updated) setExistingPhotos(updated.photos);
+    setPhotoFiles([]);
+    setPhotoPreviews([]);
+    setPhotoIdsToDelete([]);
     showSaved();
   };
 
@@ -190,6 +215,30 @@ export function WateringLogDetailSheet({
                 onChange={(event) => setMemo(event.target.value)}
               />
             </label>
+
+            {existingPhotos.length > 0 || photoPreviews.length > 0 ? (
+              <div className="grid grid-cols-5 gap-2">
+                {existingPhotos.map((photo) => (
+                  <button className="relative overflow-hidden rounded-lg" key={photo.id} type="button" onClick={() => removeExistingPhoto(photo)} aria-label="사진 제거">
+                    <img alt="" className="aspect-square object-cover" src={photo.imageUrl} />
+                    <span className="absolute right-1 top-1 rounded-full bg-white/90 px-1.5 text-xs text-neutral-700">x</span>
+                  </button>
+                ))}
+                {photoPreviews.map((preview, index) => (
+                  <button className="relative overflow-hidden rounded-lg" key={preview} type="button" onClick={() => removeNewPhoto(index)} aria-label="사진 제거">
+                    <img alt="" className="aspect-square object-cover" src={preview} />
+                    <span className="absolute right-1 top-1 rounded-full bg-white/90 px-1.5 text-xs text-neutral-700">x</span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            {existingPhotos.length + photoFiles.length < 5 ? (
+              <label className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-neutral-300 text-sm font-medium text-neutral-500">
+                <Camera aria-hidden className="h-4 w-4" />
+                사진 추가
+                <input className="sr-only" type="file" accept="image/*" multiple onChange={(event) => addPhotos(event.target.files)} />
+              </label>
+            ) : null}
           </>
         ) : (
           <>
@@ -201,9 +250,9 @@ export function WateringLogDetailSheet({
           </>
         )}
 
-        {log.photos.length > 0 ? (
+        {!isEditing && existingPhotos.length > 0 ? (
           <div className="grid grid-cols-3 gap-2">
-            {log.photos.map((photo) => (
+            {existingPhotos.map((photo) => (
               <img alt="" className="aspect-square rounded-lg object-cover" key={photo.id} src={photo.imageUrl} />
             ))}
           </div>

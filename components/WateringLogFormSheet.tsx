@@ -45,12 +45,24 @@ export function WateringLogFormSheet({
   const [amount, setAmount] = useState<WaterAmount | undefined>();
   const [conditions, setConditions] = useState<PlantCondition[]>([]);
   const [memo, setMemo] = useState("");
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
+  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const { addWateringLog, isDemo, user } = usePlantData();
 
   const toggleCondition = (value: PlantCondition) => {
     setConditions((current) => (current.includes(value) ? current.filter((item) => item !== value) : [...current, value]));
+  };
+  const addPhotos = (files: FileList | null) => {
+    const nextFiles = [...photoFiles, ...Array.from(files ?? [])].slice(0, 5);
+    setPhotoFiles(nextFiles);
+    setPhotoPreviews(nextFiles.map((file) => URL.createObjectURL(file)));
+  };
+  const removePhoto = (index: number) => {
+    const nextFiles = photoFiles.filter((_, itemIndex) => itemIndex !== index);
+    setPhotoFiles(nextFiles);
+    setPhotoPreviews(nextFiles.map((file) => URL.createObjectURL(file)));
   };
 
   const save = async () => {
@@ -65,7 +77,8 @@ export function WateringLogFormSheet({
           soilStatus: soil,
           waterAmount: amount,
           plantConditions: conditions,
-          memo
+          memo,
+          photoFiles
         });
         setSaved(true);
         onSaved?.(log);
@@ -144,13 +157,23 @@ export function WateringLogFormSheet({
           />
         </label>
 
-        <button
-          className="flex h-12 w-full items-center justify-center gap-2 rounded-lg border border-dashed border-neutral-300 text-sm font-medium text-neutral-500"
-          type="button"
-        >
-          <Camera aria-hidden className="h-4 w-4" />
-          사진 최대 5장
-        </button>
+        {photoPreviews.length > 0 ? (
+          <div className="grid grid-cols-5 gap-2">
+            {photoPreviews.map((preview, index) => (
+              <button className="relative overflow-hidden rounded-lg" key={preview} type="button" onClick={() => removePhoto(index)} aria-label="사진 제거">
+                <img alt="" className="aspect-square object-cover" src={preview} />
+                <span className="absolute right-1 top-1 rounded-full bg-white/90 px-1.5 text-xs text-neutral-700">x</span>
+              </button>
+            ))}
+          </div>
+        ) : null}
+        {photoFiles.length < 5 ? (
+          <label className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-neutral-300 text-sm font-medium text-neutral-500">
+            <Camera aria-hidden className="h-4 w-4" />
+            사진 최대 5장
+            <input className="sr-only" type="file" accept="image/*" multiple onChange={(event) => addPhotos(event.target.files)} />
+          </label>
+        ) : null}
 
         {isDemo ? <p className="text-sm leading-6 text-neutral-500">로그인 전에는 화면 확인용으로만 동작합니다. 저장하려면 Google로 로그인해주세요.</p> : null}
         {error ? <p className="text-sm text-red-500">{error}</p> : null}
