@@ -45,3 +45,14 @@ button {
   max-height: min(70vh, 36rem);
   overflow-y: auto;
 }
+
+@keyframes calendar-fade {
+  from {
+    opacity: 0.35;
+    transform: translateY(0.25rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
