@@ -4,8 +4,10 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import Link from "next/link";
 import { CalendarClock, Droplets, Eye, Leaf, Plus } from "lucide-react";
+import { BottomSheet } from "@/components/BottomSheet";
 import { usePlantData } from "@/components/AppProviders";
 import { PlantAvatar } from "@/components/PlantAvatar";
+import { PlantForm } from "@/components/PlantForm";
 import { WateringLogFormSheet } from "@/components/WateringLogFormSheet";
 import { todayISO } from "@/lib/date";
 import { getNextWateringDate, getTodayPlants, getUncheckedPlants, getUpcomingPlants } from "@/lib/watering";
@@ -17,6 +19,7 @@ export function HomeDashboard() {
   const todayPlants = getTodayPlants(plants, wateringLogs, plantSnoozes, today);
   const upcoming = getUpcomingPlants(plants, wateringLogs, today);
   const unchecked = getUncheckedPlants(plants, wateringLogs, today);
+  const [addingPlant, setAddingPlant] = useState(false);
   const [formPlant, setFormPlant] = useState<Plant | null>(null);
   const [snoozePlant, setSnoozePlant] = useState<Plant | null>(null);
   const [showSavedToast, setShowSavedToast] = useState(false);
@@ -29,13 +32,14 @@ export function HomeDashboard() {
   return (
     <>
       <div className="mb-3 flex justify-end">
-        <Link
+        <button
           className="inline-flex h-9 items-center gap-1.5 rounded-md border border-neutral-200 bg-white px-3 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
-          href="/plants/new"
+          type="button"
+          onClick={() => setAddingPlant(true)}
         >
           <Plus aria-hidden className="h-4 w-4" />
           새 식물 등록
-        </Link>
+        </button>
       </div>
       <section className="mb-6 rounded-lg border border-neutral-200 bg-white p-4">
         <div className="mb-4 flex items-center justify-between">
@@ -128,6 +132,11 @@ export function HomeDashboard() {
             setSnoozePlant(null);
           }}
         />
+      ) : null}
+      {addingPlant ? (
+        <BottomSheet title="식물 등록" onClose={() => setAddingPlant(false)}>
+          <PlantForm variant="sheet" onSaved={() => setAddingPlant(false)} />
+        </BottomSheet>
       ) : null}
       {showSavedToast ? <SavedToast /> : null}
     </>
