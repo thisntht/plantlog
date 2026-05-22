@@ -45,7 +45,7 @@ type PlantDataContextValue = {
   refresh: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
-  addPlant: (input: NewPlantInput) => Promise<void>;
+  addPlant: (input: NewPlantInput) => Promise<Plant | null>;
   addWateringLog: (input: NewWateringLogInput) => Promise<void>;
   updateWateringLog: (logId: string, input: UpdateWateringLogInput) => Promise<void>;
   deleteWateringLog: (logId: string) => Promise<void>;
@@ -136,9 +136,11 @@ export function AppProviders({ children }: { children: ReactNode }) {
 
   const addPlant = useCallback(
     async (input: NewPlantInput) => {
-      if (!supabase || !user) return;
+      if (!supabase || !user) return null;
 
-      const { error } = await supabase.from("plants").insert({
+      const { data, error } = await supabase
+        .from("plants")
+        .insert({
         user_id: user.id,
         nickname: input.nickname,
         scientific_name: input.scientificName || null,
@@ -146,10 +148,13 @@ export function AppProviders({ children }: { children: ReactNode }) {
         watering_interval_days: input.wateringIntervalDays,
         started_at: input.startedAt,
         memo: input.memo || null
-      });
+        })
+        .select("*")
+        .single();
 
       if (error) throw error;
       await refresh();
+      return data ? mapPlant(data) : null;
     },
     [refresh, supabase, user]
   );

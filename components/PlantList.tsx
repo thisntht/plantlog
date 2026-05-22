@@ -5,7 +5,6 @@ import Link from "next/link";
 import { ArrowDownUp, Plus } from "lucide-react";
 import { usePlantData } from "@/components/AppProviders";
 import { PlantAvatar } from "@/components/PlantAvatar";
-import { plants as samplePlants } from "@/lib/sample-data";
 import { todayISO } from "@/lib/date";
 import { getNextWateringDate } from "@/lib/watering";
 
@@ -21,7 +20,6 @@ export function PlantList() {
       return getNextWateringDate(a, wateringLogs).localeCompare(getNextWateringDate(b, wateringLogs));
     });
   }, [plants, sort, wateringLogs]);
-  const staticPlantIds = useMemo(() => new Set(samplePlants.map((plant) => plant.id)), []);
 
   return (
     <>
@@ -49,7 +47,7 @@ export function PlantList() {
           return (
             <Link
               className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-white p-3 transition hover:bg-neutral-50"
-              href={staticPlantIds.has(plant.id) ? `/plants/${plant.id}` : "/plants"}
+              href={`/plants/${plant.id}`}
               key={plant.id}
             >
               <PlantAvatar name={plant.nickname} imageUrl={plant.coverImageUrl} />
@@ -57,7 +55,6 @@ export function PlantList() {
                 <h2 className="truncate font-medium text-neutral-900">{plant.nickname}</h2>
                 <p className="mt-0.5 text-sm text-neutral-500">
                   {nextDate <= today ? "오늘 확인" : `${nextDate} 예정`}
-                  {!staticPlantIds.has(plant.id) ? " · 동기화됨" : ""}
                 </p>
               </div>
               <ArrowDownUp aria-hidden className="h-4 w-4 text-neutral-300" />

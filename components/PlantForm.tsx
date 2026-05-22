@@ -24,21 +24,24 @@ export function PlantForm() {
       return;
     }
 
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+
     setSaving(true);
     setError("");
 
     try {
-      if (user) {
-        await addPlant({
-          nickname: nickname.trim(),
-          wateringIntervalDays: Number(wateringIntervalDays) || 7,
-          scientificName: scientificName.trim(),
-          plantType: plantType.trim(),
-          startedAt,
-          memo: memo.trim()
-        });
-      }
-      router.push("/plants");
+      const plant = await addPlant({
+        nickname: nickname.trim(),
+        wateringIntervalDays: Number(wateringIntervalDays) || 7,
+        scientificName: scientificName.trim(),
+        plantType: plantType.trim(),
+        startedAt,
+        memo: memo.trim()
+      });
+      router.push(plant ? `/plants/${plant.id}` : "/plants");
     } catch {
       setError("저장하지 못했어요. 잠시 뒤 다시 시도해주세요.");
     } finally {

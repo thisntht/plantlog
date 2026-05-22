@@ -14,14 +14,23 @@ import type { Plant, WateringLog } from "@/lib/types";
 type Tab = "list" | "calendar" | "album";
 
 export function PlantDetail({ plant }: { plant: Plant }) {
-  const { plants, wateringLogs } = usePlantData();
+  const { plants, wateringLogs, loading } = usePlantData();
   const [tab, setTab] = useState<Tab>("list");
   const [selectedLog, setSelectedLog] = useState<WateringLog | null>(null);
   const [adding, setAdding] = useState(false);
-  const activePlant = plants.find((item) => item.id === plant.id) ?? plant;
+  const foundPlant = plants.find((item) => item.id === plant.id);
+  const activePlant = foundPlant ?? plant;
   const logs = getPlantLogs(activePlant.id, wateringLogs);
   const lastWatered = getLastWateredDate(activePlant.id, wateringLogs);
   const suggestion = getWateringIntervalSuggestion(activePlant, wateringLogs);
+
+  if (loading && !foundPlant) {
+    return <div className="rounded-lg border border-neutral-200 bg-white p-5 text-sm text-neutral-500">식물 정보를 불러오는 중이에요.</div>;
+  }
+
+  if (!loading && !foundPlant && !plant.userId) {
+    return <div className="rounded-lg border border-neutral-200 bg-white p-5 text-sm text-neutral-500">식물을 찾지 못했어요. 식물 탭에서 다시 선택해주세요.</div>;
+  }
 
   return (
     <>
