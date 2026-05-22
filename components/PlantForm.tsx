@@ -43,7 +43,7 @@ export function PlantForm() {
       });
       router.push(plant ? `/plants/${plant.id}` : "/plants");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "알 수 없는 오류";
+      const message = getErrorMessage(error);
       setError(`저장하지 못했어요. ${message}`);
     } finally {
       setSaving(false);
@@ -77,6 +77,21 @@ export function PlantForm() {
       </button>
     </form>
   );
+}
+
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  if (error && typeof error === "object") {
+    const details = error as { message?: unknown; details?: unknown; hint?: unknown; code?: unknown };
+    const parts = [details.message, details.details, details.hint, details.code]
+      .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+      .map((value) => value.trim());
+
+    if (parts.length > 0) return parts.join(" ");
+    return JSON.stringify(error);
+  }
+  return "알 수 없는 오류";
 }
 
 function Field({
