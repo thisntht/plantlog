@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowDownUp, Plus } from "lucide-react";
+import { ArrowDownUp, ChevronLeft, Plus } from "lucide-react";
 import { BottomSheet } from "@/components/BottomSheet";
+import { PlantDetail } from "@/components/PlantDetail";
 import { PlantForm } from "@/components/PlantForm";
 import { usePlantData } from "@/components/AppProviders";
 import { PlantAvatar } from "@/components/PlantAvatar";
@@ -17,9 +18,11 @@ export function PlantList() {
   const searchParams = useSearchParams();
   const [sort, setSort] = useState<SortMode>("needs");
   const [adding, setAdding] = useState(false);
+  const [selectedPlantId, setSelectedPlantId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState("");
   const { plants, wateringLogs, isDemo } = usePlantData();
   const today = todayISO();
+  const selectedPlant = selectedPlantId ? plants.find((plant) => plant.id === selectedPlantId) : null;
   const sortedPlants = useMemo(() => {
     return [...plants].sort((a, b) => {
       if (sort === "name") return a.nickname.localeCompare(b.nickname, "ko");
@@ -33,9 +36,26 @@ export function PlantList() {
 
   useEffect(() => {
     if (searchParams.get("toast") !== "deleted") return;
+    setSelectedPlantId(null);
     showToast("삭제되었습니다");
     router.replace("/plants");
   }, [router, searchParams]);
+
+  if (selectedPlant) {
+    return (
+      <>
+        <button
+          className="mb-4 inline-flex h-10 items-center gap-2 rounded-md border border-neutral-200 bg-white px-3 text-sm font-medium text-neutral-700"
+          type="button"
+          onClick={() => setSelectedPlantId(null)}
+        >
+          <ChevronLeft aria-hidden className="h-4 w-4" />
+          식물 목록
+        </button>
+        <PlantDetail plant={selectedPlant} />
+      </>
+    );
+  }
 
   return (
     <>
@@ -70,7 +90,7 @@ export function PlantList() {
               className="flex w-full items-center gap-3 rounded-lg border border-neutral-200 bg-white p-3 text-left transition hover:bg-neutral-50"
               key={plant.id}
               type="button"
-              onClick={() => router.push(`/plants/${plant.id}`)}
+              onClick={() => setSelectedPlantId(plant.id)}
             >
               <PlantAvatar name={plant.nickname} imageUrl={plant.coverImageUrl} />
               <div className="min-w-0 flex-1">
