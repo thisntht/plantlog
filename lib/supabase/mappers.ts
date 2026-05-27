@@ -1,4 +1,4 @@
-import type { Plant, PlantCondition, PlantSnooze, SoilStatus, WaterAmount, WateringLog, WateringLogPhoto } from "@/lib/types";
+import type { LogType, Plant, PlantCondition, PlantSnooze, SoilStatus, WaterAmount, WateringLog, WateringLogPhoto } from "@/lib/types";
 
 type PlantRow = {
   id: string;
@@ -18,6 +18,7 @@ type WateringLogRow = {
   user_id: string;
   plant_id: string;
   watered_date: string;
+  log_type?: LogType | null;
   soil_status: SoilStatus | null;
   water_amount: WaterAmount | null;
   plant_conditions: PlantCondition[] | null;
@@ -60,6 +61,7 @@ export function mapWateringLog(row: WateringLogRow): WateringLog {
     userId: row.user_id,
     plantId: row.plant_id,
     wateredDate: row.watered_date,
+    logType: row.log_type ?? "watering",
     soilStatus: row.soil_status ?? undefined,
     waterAmount: row.water_amount ?? undefined,
     plantConditions: row.plant_conditions ?? [],

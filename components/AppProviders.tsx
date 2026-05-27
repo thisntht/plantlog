@@ -6,7 +6,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { plants as samplePlants, plantSnoozes as sampleSnoozes, wateringLogs as sampleLogs } from "@/lib/sample-data";
 import { createBrowserSupabaseClient, getAppUrl, hasSupabaseConfig } from "@/lib/supabase/browser";
 import { mapPlant, mapPlantSnooze, mapWateringLog } from "@/lib/supabase/mappers";
-import type { Plant, PlantCondition, PlantSnooze, SoilStatus, WaterAmount, WateringLog } from "@/lib/types";
+import type { LogType, Plant, PlantCondition, PlantSnooze, SoilStatus, WaterAmount, WateringLog } from "@/lib/types";
 
 type NewPlantInput = {
   nickname: string;
@@ -23,6 +23,7 @@ type UpdatePlantInput = Partial<NewPlantInput>;
 type NewWateringLogInput = {
   plantId: string;
   wateredDate: string;
+  logType: LogType;
   soilStatus?: SoilStatus;
   waterAmount?: WaterAmount;
   plantConditions: PlantCondition[];
@@ -32,6 +33,7 @@ type NewWateringLogInput = {
 
 type UpdateWateringLogInput = Partial<{
   wateredDate: string;
+  logType: LogType;
   soilStatus: SoilStatus;
   waterAmount: WaterAmount;
   plantConditions: PlantCondition[];
@@ -245,6 +247,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
           user_id: user.id,
           plant_id: input.plantId,
           watered_date: input.wateredDate,
+          log_type: input.logType,
           soil_status: input.soilStatus || null,
           water_amount: input.waterAmount || null,
           plant_conditions: input.plantConditions,
@@ -331,6 +334,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
 
       const payload = {
         watered_date: input.wateredDate,
+        log_type: input.logType,
         soil_status: input.soilStatus ?? null,
         water_amount: input.waterAmount ?? null,
         plant_conditions: input.plantConditions,

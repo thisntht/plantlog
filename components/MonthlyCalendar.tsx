@@ -12,6 +12,16 @@ import { buildMonthBuckets } from "@/lib/watering";
 import type { DateBucket, Plant, WateringLog } from "@/lib/types";
 
 const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+const logTypeLabels = {
+  watering: "물주기",
+  repotting: "분갈이",
+  fertilizing: "비료"
+} as const;
+const logTypeDotClass = {
+  watering: "bg-neutral-900",
+  repotting: "bg-neutral-500",
+  fertilizing: "bg-neutral-300"
+} as const;
 
 export function MonthlyCalendar() {
   const { plants, wateringLogs } = usePlantData();
@@ -207,14 +217,15 @@ function Toast({ message }: { message: string }) {
 
 function CalendarItems({ bucket, plants }: { bucket: DateBucket; plants: Plant[] }) {
   const visibleActual = bucket.actualLogs.slice(0, 1);
-  const showScheduled = bucket.actualLogs.length === 0 ? bucket.scheduledPlants.slice(0, 1) : [];
+  const hasActualWatering = bucket.actualLogs.some((log) => log.logType === "watering");
+  const showScheduled = hasActualWatering ? [] : bucket.scheduledPlants.slice(0, 1);
   const remaining = bucket.actualLogs.length + bucket.scheduledPlants.length - visibleActual.length - showScheduled.length;
 
   return (
     <div className="mt-1.5 space-y-1">
       {visibleActual.map((log) => (
         <p className="flex min-w-0 items-center gap-1 truncate text-[0.64rem] font-semibold text-neutral-900" key={log.id}>
-          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-neutral-900" />
+          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${logTypeDotClass[log.logType]}`} />
           <span className="truncate">{getPlantName(log, plants)}</span>
         </p>
       ))}
@@ -381,7 +392,10 @@ function LogGroup({
             type="button"
             onClick={() => onSelectLog(log)}
           >
-            {getPlantName(log, plants)}
+            <span className="flex items-center justify-between gap-3">
+              <span>{getPlantName(log, plants)}</span>
+              <span className="shrink-0 rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-500">{logTypeLabels[log.logType]}</span>
+            </span>
           </button>
         ))}
         {logs.length === 0 ? <p className="text-sm text-neutral-400">기록이 없어요.</p> : null}

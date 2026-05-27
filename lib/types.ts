@@ -1,6 +1,7 @@
 export type SoilStatus = "dry" | "moist" | "wet";
 export type WaterAmount = "little" | "normal" | "deep";
 export type PlantCondition = "healthy" | "new_growth" | "drooping" | "yellow_leaf" | "dry";
+export type LogType = "watering" | "repotting" | "fertilizing";
 
 export type Profile = {
   id: string;
@@ -29,6 +30,7 @@ export type WateringLog = {
   userId: string;
   plantId: string;
   wateredDate: string;
+  logType: LogType;
   soilStatus?: SoilStatus;
   waterAmount?: WaterAmount;
   plantConditions: PlantCondition[];

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Camera, Check } from "lucide-react";
 import { BottomSheet } from "@/components/BottomSheet";
 import { usePlantData } from "@/components/AppProviders";
-import type { Plant, PlantCondition, SoilStatus, WaterAmount, WateringLog } from "@/lib/types";
+import type { LogType, Plant, PlantCondition, SoilStatus, WaterAmount, WateringLog } from "@/lib/types";
 
 const soilOptions: { value: SoilStatus; label: string }[] = [
   { value: "dry", label: "말랐음" },
@@ -26,6 +26,12 @@ const conditionOptions: { value: PlantCondition; label: string }[] = [
   { value: "dry", label: "건조" }
 ];
 
+const logTypeOptions: { value: LogType; label: string }[] = [
+  { value: "watering", label: "물주기" },
+  { value: "repotting", label: "분갈이" },
+  { value: "fertilizing", label: "비료/영양제" }
+];
+
 export function WateringLogFormSheet({
   plants,
   selectedPlantId,
@@ -41,6 +47,7 @@ export function WateringLogFormSheet({
 }) {
   const [plantId, setPlantId] = useState(selectedPlantId ?? plants[0]?.id ?? "");
   const [date, setDate] = useState(selectedDate);
+  const [logType, setLogType] = useState<LogType>("watering");
   const [soil, setSoil] = useState<SoilStatus | undefined>();
   const [amount, setAmount] = useState<WaterAmount | undefined>();
   const [conditions, setConditions] = useState<PlantCondition[]>([]);
@@ -74,8 +81,9 @@ export function WateringLogFormSheet({
         const log = await addWateringLog({
           plantId,
           wateredDate: date,
-          soilStatus: soil,
-          waterAmount: amount,
+          logType,
+          soilStatus: logType === "watering" ? soil : undefined,
+          waterAmount: logType === "watering" ? amount : undefined,
           plantConditions: conditions,
           memo,
           photoFiles
@@ -94,8 +102,10 @@ export function WateringLogFormSheet({
   };
 
   return (
-    <BottomSheet title="물주기 기록" onClose={onClose}>
+    <BottomSheet title="식물 기록" onClose={onClose}>
       <div className="space-y-5">
+        <ChoiceGroup title="기록 종류" options={logTypeOptions} selected={logType} onSelect={setLogType} />
+
         <label className="block">
           <span className="mb-2 block text-sm font-medium text-neutral-700">식물</span>
           <select
@@ -123,8 +133,12 @@ export function WateringLogFormSheet({
           </div>
         </label>
 
-        <ChoiceGroup title="흙 상태" options={soilOptions} selected={soil} onSelect={setSoil} />
-        <ChoiceGroup title="물 준 양" options={amountOptions} selected={amount} onSelect={setAmount} />
+        {logType === "watering" ? (
+          <>
+            <ChoiceGroup title="흙 상태" options={soilOptions} selected={soil} onSelect={setSoil} />
+            <ChoiceGroup title="물 준 양" options={amountOptions} selected={amount} onSelect={setAmount} />
+          </>
+        ) : null}
 
         <section>
           <h3 className="mb-2 text-sm font-medium text-neutral-700">식물 상태</h3>

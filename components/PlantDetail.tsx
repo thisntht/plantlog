@@ -15,6 +15,16 @@ import { getLastWateredDate, getPlantLogs, getWateringIntervalSuggestion } from 
 import type { Plant, WateringLog } from "@/lib/types";
 
 type Tab = "list" | "calendar" | "album";
+const logTypeLabels = {
+  watering: "물주기",
+  repotting: "분갈이",
+  fertilizing: "비료/영양제"
+} as const;
+const logTypeDotClass = {
+  watering: "bg-neutral-900",
+  repotting: "bg-neutral-500",
+  fertilizing: "bg-neutral-300"
+} as const;
 
 export function PlantDetail({ plant }: { plant: Plant }) {
   const router = useRouter();
@@ -86,7 +96,7 @@ export function PlantDetail({ plant }: { plant: Plant }) {
           onClick={() => setAdding(true)}
         >
           <Droplets aria-hidden className="h-4 w-4" />
-          물주기 기록
+          기록 추가
         </button>
       </section>
 
@@ -355,7 +365,10 @@ function LogList({ logs, onSelect }: { logs: WateringLog[]; onSelect: (log: Wate
     <div className="space-y-2">
       {logs.map((log) => (
         <button className="w-full rounded-lg border border-neutral-200 bg-white p-4 text-left" key={log.id} type="button" onClick={() => onSelect(log)}>
-          <p className="font-medium text-neutral-900">{formatKoreanDate(log.wateredDate)}</p>
+          <div className="flex items-center justify-between gap-3">
+            <p className="font-medium text-neutral-900">{formatKoreanDate(log.wateredDate)}</p>
+            <span className="shrink-0 rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-500">{logTypeLabels[log.logType]}</span>
+          </div>
           {log.memo ? <p className="mt-1 truncate text-sm text-neutral-500">{log.memo}</p> : null}
         </button>
       ))}
@@ -419,7 +432,7 @@ function PlantMiniCalendar({ logs, onSelect }: { logs: WateringLog[]; onSelect: 
               onClick={() => log && onSelect(log)}
             >
               {cell.day}
-              {cell.date ? log ? <span className="mt-1 h-1.5 w-1.5 rounded-full bg-neutral-900" /> : <span className="mt-1 h-1.5 w-1.5" /> : null}
+              {cell.date ? log ? <span className={`mt-1 h-1.5 w-1.5 rounded-full ${logTypeDotClass[log.logType]}`} /> : <span className="mt-1 h-1.5 w-1.5" /> : null}
             </button>
           );
         })}

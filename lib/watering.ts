@@ -4,7 +4,7 @@ import type { DateBucket, Plant, PlantSnooze, WateringLog } from "@/lib/types";
 
 export function getLastWateredDate(plantId: string, logs: WateringLog[]) {
   const plantLogs = logs
-    .filter((log) => log.plantId === plantId)
+    .filter((log) => log.plantId === plantId && log.logType === "watering")
     .sort((a, b) => b.wateredDate.localeCompare(a.wateredDate));
 
   return plantLogs[0]?.wateredDate;
@@ -77,7 +77,7 @@ export function buildMonthBuckets(monthDate: Date, plants: Plant[], logs: Wateri
     while (compareAsc(next, monthEnd) <= 0) {
       const date = dateToISO(next);
       const bucket = buckets.get(date);
-      const hasActualLogForPlant = bucket?.actualLogs.some((log) => log.plantId === plant.id);
+      const hasActualLogForPlant = bucket?.actualLogs.some((log) => log.plantId === plant.id && log.logType === "watering");
       if (bucket && !hasActualLogForPlant) bucket.scheduledPlants.push(plant);
       next = addDays(next, plant.wateringIntervalDays);
     }
@@ -88,6 +88,7 @@ export function buildMonthBuckets(monthDate: Date, plants: Plant[], logs: Wateri
 
 export function getWateringIntervalSuggestion(plant: Plant, logs: WateringLog[]) {
   const dates = getPlantLogs(plant.id, logs)
+    .filter((log) => log.logType === "watering")
     .slice(0, 5)
     .map((log) => log.wateredDate)
     .sort();

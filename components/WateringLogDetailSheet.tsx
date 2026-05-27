@@ -5,7 +5,7 @@ import { Camera, Check, Edit3, Trash2, X } from "lucide-react";
 import { BottomSheet } from "@/components/BottomSheet";
 import { usePlantData } from "@/components/AppProviders";
 import { formatKoreanDate } from "@/lib/date";
-import type { Plant, PlantCondition, SoilStatus, WaterAmount, WateringLog, WateringLogPhoto } from "@/lib/types";
+import type { LogType, Plant, PlantCondition, SoilStatus, WaterAmount, WateringLog, WateringLogPhoto } from "@/lib/types";
 
 const soilOptions: { value: SoilStatus; label: string }[] = [
   { value: "dry", label: "말랐음" },
@@ -26,6 +26,18 @@ const conditionOptions: { value: PlantCondition; label: string }[] = [
   { value: "yellow_leaf", label: "노란 잎" },
   { value: "dry", label: "건조" }
 ];
+
+const logTypeOptions: { value: LogType; label: string }[] = [
+  { value: "watering", label: "물주기" },
+  { value: "repotting", label: "분갈이" },
+  { value: "fertilizing", label: "비료/영양제" }
+];
+
+const logTypeLabels: Record<LogType, string> = {
+  watering: "물주기",
+  repotting: "분갈이",
+  fertilizing: "비료/영양제"
+};
 
 const soilLabels = { dry: "말랐음", moist: "약간 촉촉", wet: "축축함" };
 const amountLabels = { little: "조금", normal: "보통", deep: "듬뿍" };
@@ -52,6 +64,7 @@ export function WateringLogDetailSheet({
 }) {
   const { updateWateringLog, deleteWateringLog, user } = usePlantData();
   const [wateredDate, setWateredDate] = useState(log.wateredDate);
+  const [logType, setLogType] = useState<LogType>(log.logType);
   const [soilStatus, setSoilStatus] = useState<SoilStatus | undefined>(log.soilStatus);
   const [waterAmount, setWaterAmount] = useState<WaterAmount | undefined>(log.waterAmount);
   const [plantConditions, setPlantConditions] = useState<PlantCondition[]>(log.plantConditions);
@@ -104,8 +117,9 @@ export function WateringLogDetailSheet({
     setSaveState("saving");
     const updated = await updateWateringLog(log.id, {
       wateredDate,
-      soilStatus,
-      waterAmount,
+      logType,
+      soilStatus: logType === "watering" ? soilStatus : undefined,
+      waterAmount: logType === "watering" ? waterAmount : undefined,
       plantConditions,
       memo,
       photoFiles,
@@ -171,6 +185,8 @@ export function WateringLogDetailSheet({
 
         {isEditing ? (
           <>
+            <ChoiceGroup title="기록 종류" options={logTypeOptions} selected={logType} onSelect={setLogType} />
+
             <label className="block">
               <span className="mb-2 block text-sm font-medium text-neutral-700">날짜</span>
               <div className="flex h-11 w-full min-w-0 items-center overflow-hidden rounded-md border border-neutral-200 bg-white focus-within:border-neutral-500">
@@ -183,8 +199,12 @@ export function WateringLogDetailSheet({
               </div>
             </label>
 
-            <ChoiceGroup title="흙 상태" options={soilOptions} selected={soilStatus} onSelect={setSoilStatus} />
-            <ChoiceGroup title="물 준 양" options={amountOptions} selected={waterAmount} onSelect={setWaterAmount} />
+            {logType === "watering" ? (
+              <>
+                <ChoiceGroup title="흙 상태" options={soilOptions} selected={soilStatus} onSelect={setSoilStatus} />
+                <ChoiceGroup title="물 준 양" options={amountOptions} selected={waterAmount} onSelect={setWaterAmount} />
+              </>
+            ) : null}
 
             <section>
               <h3 className="mb-2 text-sm font-medium text-neutral-700">식물 상태</h3>
@@ -242,9 +262,14 @@ export function WateringLogDetailSheet({
           </>
         ) : (
           <>
+            <Info label="기록 종류" value={logTypeLabels[logType]} />
             <Info label="날짜" value={formatKoreanDate(wateredDate)} />
-            <Info label="흙 상태" value={soilStatus ? soilLabels[soilStatus] : "기록 없음"} />
-            <Info label="물 준 양" value={waterAmount ? amountLabels[waterAmount] : "기록 없음"} />
+            {logType === "watering" ? (
+              <>
+                <Info label="흙 상태" value={soilStatus ? soilLabels[soilStatus] : "기록 없음"} />
+                <Info label="물 준 양" value={waterAmount ? amountLabels[waterAmount] : "기록 없음"} />
+              </>
+            ) : null}
             <Info label="식물 상태" value={plantConditions.map((item) => conditionLabels[item]).join(", ") || "기록 없음"} />
             <Info label="메모" value={memo || "기록 없음"} />
           </>
@@ -261,7 +286,7 @@ export function WateringLogDetailSheet({
       {deleteConfirmOpen ? (
         <ConfirmOverlay
           title="기록을 삭제할까요?"
-          description="삭제한 물주기 기록은 되돌릴 수 없습니다."
+          description="삭제한 식물 기록은 되돌릴 수 없습니다."
           onCancel={() => setDeleteConfirmOpen(false)}
           onConfirm={() => void remove()}
         />

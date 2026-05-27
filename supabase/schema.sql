@@ -25,6 +25,7 @@ create table if not exists public.watering_logs (
   user_id uuid not null references auth.users(id) on delete cascade,
   plant_id uuid not null references public.plants(id) on delete cascade,
   watered_date date not null,
+  log_type text not null default 'watering' check (log_type in ('watering', 'repotting', 'fertilizing')),
   soil_status text check (soil_status in ('dry', 'moist', 'wet')),
   water_amount text check (water_amount in ('little', 'normal', 'deep')),
   plant_conditions text[] not null default '{}',
@@ -52,6 +53,21 @@ alter table public.plants enable row level security;
 alter table public.watering_logs enable row level security;
 alter table public.watering_log_photos enable row level security;
 alter table public.plant_snoozes enable row level security;
+
+alter table public.watering_logs
+  add column if not exists log_type text not null default 'watering';
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'watering_logs_log_type_check'
+      and conrelid = 'public.watering_logs'::regclass
+  ) then
+    alter table public.watering_logs
+      add constraint watering_logs_log_type_check check (log_type in ('watering', 'repotting', 'fertilizing'));
+  end if;
+end $$;
 
 create policy "profiles are private" on public.profiles
   for all using (auth.uid() = id) with check (auth.uid() = id);
