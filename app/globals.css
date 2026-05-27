@@ -37,6 +37,29 @@ button {
   -webkit-tap-highlight-color: transparent;
 }
 
+.date-field {
+  inline-size: 100%;
+  max-inline-size: 100%;
+}
+
+.date-field input[type="date"] {
+  display: block;
+  inline-size: 100%;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.date-field input[type="date"]::-webkit-date-and-time-value {
+  margin: 0;
+  text-align: center;
+}
+
+.date-field input[type="date"]::-webkit-calendar-picker-indicator {
+  margin-inline-start: 0;
+}
+
 .safe-bottom {
   padding-bottom: max(1rem, env(safe-area-inset-bottom));
 }

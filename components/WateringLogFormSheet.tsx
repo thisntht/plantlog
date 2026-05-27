@@ -123,9 +123,9 @@ export function WateringLogFormSheet({
 
         <label className="block">
           <span className="mb-2 block text-sm font-medium text-neutral-700">날짜</span>
-          <div className="flex h-12 w-full max-w-full items-center overflow-hidden rounded-md border border-neutral-200 bg-white px-3 focus-within:border-neutral-500">
+          <div className="date-field flex h-12 w-full min-w-0 max-w-full items-center overflow-hidden rounded-md border border-neutral-200 bg-white focus-within:border-neutral-500">
             <input
-              className="h-full min-w-0 flex-1 appearance-none bg-transparent text-center text-base leading-[3rem] text-neutral-900 outline-none"
+              className="h-full w-full min-w-0 bg-transparent px-3 text-center text-base leading-[3rem] text-neutral-900 outline-none"
               type="date"
               value={date}
               onChange={(event) => setDate(event.target.value)}
