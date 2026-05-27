@@ -12,9 +12,10 @@ import { WateringLogDetailSheet } from "@/components/WateringLogDetailSheet";
 import { WateringLogFormSheet } from "@/components/WateringLogFormSheet";
 import { dateToISO, formatKoreanDate, todayISO } from "@/lib/date";
 import { getLastWateredDate, getPlantLogs, getWateringIntervalSuggestion } from "@/lib/watering";
-import type { Plant, WateringLog } from "@/lib/types";
+import type { LogType, Plant, WateringLog } from "@/lib/types";
 
 type Tab = "list" | "calendar" | "album";
+const logTypeOrder: LogType[] = ["watering", "repotting", "fertilizing"];
 const logTypeLabels = {
   watering: "물주기",
   repotting: "분갈이",
@@ -30,6 +31,7 @@ export function PlantDetail({ plant }: { plant: Plant }) {
   const router = useRouter();
   const { plants, wateringLogs, loading, updatePlant, deletePlant, uploadPlantCover } = usePlantData();
   const [tab, setTab] = useState<Tab>("list");
+  const [logFilter, setLogFilter] = useState<LogType | null>(null);
   const [selectedLog, setSelectedLog] = useState<WateringLog | null>(null);
   const [adding, setAdding] = useState(false);
   const [editingPlant, setEditingPlant] = useState(false);
@@ -38,6 +40,7 @@ export function PlantDetail({ plant }: { plant: Plant }) {
   const foundPlant = plants.find((item) => item.id === plant.id);
   const activePlant = foundPlant ?? plant;
   const logs = getPlantLogs(activePlant.id, wateringLogs);
+  const filteredLogs = logFilter ? logs.filter((log) => log.logType === logFilter) : logs;
   const lastWatered = getLastWateredDate(activePlant.id, wateringLogs);
   const suggestion = getWateringIntervalSuggestion(activePlant, wateringLogs);
   const showToast = (message: string) => {
@@ -120,15 +123,33 @@ export function PlantDetail({ plant }: { plant: Plant }) {
         </section>
       ) : null}
 
-      <div className="mb-4 grid grid-cols-3 rounded-md border border-neutral-200 bg-white p-1">
+      <div className="mb-3 grid grid-cols-3 rounded-md border border-neutral-200 bg-white p-1">
         <TabButton active={tab === "list"} icon={<List className="h-4 w-4" />} label="리스트" onClick={() => setTab("list")} />
         <TabButton active={tab === "calendar"} icon={<CalendarDays className="h-4 w-4" />} label="캘린더" onClick={() => setTab("calendar")} />
         <TabButton active={tab === "album"} icon={<ImageIcon className="h-4 w-4" />} label="앨범" onClick={() => setTab("album")} />
       </div>
 
-      {tab === "list" ? <LogList logs={logs} onSelect={setSelectedLog} /> : null}
-      {tab === "calendar" ? <PlantMiniCalendar logs={logs} onSelect={setSelectedLog} /> : null}
-      {tab === "album" ? <Album logs={logs} onSelect={setSelectedLog} /> : null}
+      <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
+        {logTypeOrder.map((type) => {
+          const active = logFilter === type;
+          return (
+            <button
+              className={`shrink-0 rounded-full border px-4 py-2 text-sm font-medium transition ${
+                active ? "border-neutral-900 bg-neutral-900 text-white" : "border-neutral-200 bg-white text-neutral-600"
+              }`}
+              key={type}
+              type="button"
+              onClick={() => setLogFilter((current) => (current === type ? null : type))}
+            >
+              {logTypeLabels[type]}
+            </button>
+          );
+        })}
+      </div>
+
+      {tab === "list" ? <LogList logs={filteredLogs} onSelect={setSelectedLog} /> : null}
+      {tab === "calendar" ? <PlantMiniCalendar logs={filteredLogs} onSelect={setSelectedLog} /> : null}
+      {tab === "album" ? <Album logs={filteredLogs} onSelect={setSelectedLog} /> : null}
 
       {selectedLog ? (
         <WateringLogDetailSheet
@@ -372,6 +393,7 @@ function LogList({ logs, onSelect }: { logs: WateringLog[]; onSelect: (log: Wate
           {log.memo ? <p className="mt-1 truncate text-sm text-neutral-500">{log.memo}</p> : null}
         </button>
       ))}
+      {logs.length === 0 ? <p className="rounded-lg border border-neutral-200 bg-white p-4 text-sm text-neutral-500">표시할 기록이 없어요.</p> : null}
     </div>
   );
 }
