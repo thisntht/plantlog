@@ -41,16 +41,23 @@ export function PlantList() {
     router.replace("/plants");
   }, [router, searchParams]);
 
+  useEffect(() => {
+    const closeDetail = () => setSelectedPlantId(null);
+    window.addEventListener("plantlog:plants-tab", closeDetail);
+    return () => window.removeEventListener("plantlog:plants-tab", closeDetail);
+  }, []);
+
   if (selectedPlant) {
     return (
       <>
         <button
-          className="mb-4 inline-flex h-10 items-center gap-2 rounded-md border border-neutral-200 bg-white px-3 text-sm font-medium text-neutral-700"
+          className="mb-4 inline-flex h-9 items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 text-sm font-medium text-neutral-700"
           type="button"
           onClick={() => setSelectedPlantId(null)}
+          aria-label="식물 목록으로 돌아가기"
         >
           <ChevronLeft aria-hidden className="h-4 w-4" />
-          식물 목록
+          목록
         </button>
         <PlantDetail plant={selectedPlant} />
       </>

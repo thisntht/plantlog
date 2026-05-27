@@ -29,6 +29,9 @@ export function BottomTabNav() {
               )}
               href={tab.href}
               key={tab.href}
+              onClick={() => {
+                if (tab.href === "/plants") window.dispatchEvent(new Event("plantlog:plants-tab"));
+              }}
             >
               <Icon aria-hidden className="h-5 w-5" strokeWidth={active ? 2.4 : 1.8} />
               <span>{tab.label}</span>
