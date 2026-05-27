@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowDownUp, Plus } from "lucide-react";
 import { BottomSheet } from "@/components/BottomSheet";
@@ -42,9 +41,9 @@ export function PlantList() {
     <>
       {isDemo ? (
         <p className="mb-4 rounded-lg border border-neutral-200 bg-white p-4 text-sm leading-6 text-neutral-500">
-          <Link className="font-medium text-neutral-900 underline underline-offset-4" href="/login">
+          <a className="font-medium text-neutral-900 underline underline-offset-4" href="/login">
             로그인
-          </Link>
+          </a>
           전에는 샘플 식물 목록이 보입니다. 로그인 후 추가한 식물은 저장됩니다.
         </p>
       ) : null}
@@ -67,10 +66,11 @@ export function PlantList() {
         {sortedPlants.map((plant) => {
           const nextDate = getNextWateringDate(plant, wateringLogs);
           return (
-            <Link
-              className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-white p-3 transition hover:bg-neutral-50"
-              href={`/plants/${plant.id}`}
+            <button
+              className="flex w-full items-center gap-3 rounded-lg border border-neutral-200 bg-white p-3 text-left transition hover:bg-neutral-50"
               key={plant.id}
+              type="button"
+              onClick={() => router.push(`/plants/${plant.id}`)}
             >
               <PlantAvatar name={plant.nickname} imageUrl={plant.coverImageUrl} />
               <div className="min-w-0 flex-1">
@@ -80,7 +80,7 @@ export function PlantList() {
                 </p>
               </div>
               <ArrowDownUp aria-hidden className="h-4 w-4 text-neutral-300" />
-            </Link>
+            </button>
           );
         })}
         {sortedPlants.length === 0 ? (
