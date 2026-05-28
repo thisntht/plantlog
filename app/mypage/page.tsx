@@ -8,6 +8,7 @@ import { AppShell } from "@/components/AppShell";
 import { BottomSheet } from "@/components/BottomSheet";
 import { PageHeader } from "@/components/PageHeader";
 import { usePlantData } from "@/components/AppProviders";
+import { urlBase64ToUint8Array } from "@/lib/push";
 import { profile } from "@/lib/sample-data";
 
 export default function MyPage() {
@@ -15,10 +16,83 @@ export default function MyPage() {
   const [selectedHour, selectedMinute] = notificationTime.split(":");
   const [timeSheetOpen, setTimeSheetOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+  const [pushState, setPushState] = useState<"idle" | "saving" | "enabled" | "blocked" | "unsupported" | "missing-key">("idle");
+  const [toastMessage, setToastMessage] = useState("");
+
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    window.setTimeout(() => setToastMessage(""), 1600);
+  };
+
+  const enablePush = async () => {
+    const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+    if (!publicKey) {
+      setPushState("missing-key");
+      showToast("푸시 알림 키 설정이 필요해요.");
+      return;
+    }
+    if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+      setPushState("unsupported");
+      showToast("이 브라우저에서는 푸시 알림을 지원하지 않아요.");
+      return;
+    }
+
+    setPushState("saving");
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") {
+      setPushState("blocked");
+      showToast("브라우저 알림 권한이 꺼져 있어요.");
+      return;
+    }
+
+    const registration = await navigator.serviceWorker.ready;
+    const existing = await registration.pushManager.getSubscription();
+    const subscription =
+      existing ??
+      (await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey)
+      }));
+
+    const response = await fetch("/api/push/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(subscription)
+    });
+
+    if (!response.ok) {
+      setPushState("idle");
+      showToast("푸시 알림을 저장하지 못했어요.");
+      return;
+    }
+
+    setPushState("enabled");
+    showToast("푸시 알림이 켜졌어요.");
+  };
+
+  const disablePush = async () => {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+    if (!subscription) {
+      setPushState("idle");
+      return;
+    }
+
+    await fetch("/api/push/subscribe", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ endpoint: subscription.endpoint })
+    });
+    await subscription.unsubscribe();
+    setPushState("idle");
+    showToast("푸시 알림이 꺼졌어요.");
+  };
 
   return (
     <AppShell>
-      <PageHeader title="마이페이지" description="알림 시간과 개인 공개 상태를 관리합니다." />
+      <PageHeader title="마이페이지" description="알림 시간과 개인 설정을 관리합니다." />
       <section className="rounded-lg border border-neutral-200 bg-white p-4">
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-md border border-neutral-200 bg-neutral-50 text-neutral-700">
@@ -46,6 +120,21 @@ export default function MyPage() {
           <span className="flex-1 text-sm font-medium text-neutral-800">알림 시간</span>
           <span className="font-mono text-sm text-neutral-500">{notificationTime}</span>
         </button>
+        {user ? (
+          <button
+            className="flex w-full items-center gap-3 rounded-lg border border-neutral-200 bg-white p-4 text-left"
+            type="button"
+            onClick={() => (pushState === "enabled" ? void disablePush() : void enablePush())}
+          >
+            <span className="text-neutral-500">
+              <Bell className="h-4 w-4" />
+            </span>
+            <span className="flex-1 text-sm font-medium text-neutral-800">푸시 알림</span>
+            <span className="text-sm text-neutral-500">
+              {pushState === "saving" ? "설정 중" : pushState === "enabled" ? "켜짐" : pushState === "blocked" ? "차단됨" : "꺼짐"}
+            </span>
+          </button>
+        ) : null}
         <SettingRow icon={<Lock className="h-4 w-4" />} label="공개 여부" value={profile.isPublic ? "공개" : "비공개"} />
       </section>
       {user ? (
@@ -73,6 +162,7 @@ export default function MyPage() {
           }}
         />
       ) : null}
+      {toastMessage ? <Toast message={toastMessage} /> : null}
     </AppShell>
   );
 }
@@ -150,6 +240,14 @@ function SettingRow({ icon, label, value }: { icon: ReactNode; label: string; va
       <span className="text-neutral-500">{icon}</span>
       <span className="flex-1 text-sm font-medium text-neutral-800">{label}</span>
       <span className="text-sm text-neutral-500">{value}</span>
+    </div>
+  );
+}
+
+function Toast({ message }: { message: string }) {
+  return (
+    <div className="pointer-events-none fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-1/2 z-[70] -translate-x-1/2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-800 shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
+      {message}
     </div>
   );
 }

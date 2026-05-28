@@ -46,6 +46,14 @@ create table if not exists public.plant_snoozes (
   snoozed_until date not null
 );
 
+create table if not exists public.push_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  endpoint text not null unique,
+  subscription jsonb not null,
+  created_at timestamptz not null default now()
+);
+
 create unique index if not exists plant_snoozes_plant_id_unique_idx on public.plant_snoozes(plant_id);
 
 alter table public.profiles enable row level security;
@@ -53,6 +61,7 @@ alter table public.plants enable row level security;
 alter table public.watering_logs enable row level security;
 alter table public.watering_log_photos enable row level security;
 alter table public.plant_snoozes enable row level security;
+alter table public.push_subscriptions enable row level security;
 
 alter table public.watering_logs
   add column if not exists log_type text not null default 'watering';
@@ -110,12 +119,16 @@ create policy "plant snoozes are private" on public.plant_snoozes
     )
   );
 
+create policy "push subscriptions are private" on public.push_subscriptions
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
 grant usage on schema public to authenticated;
 grant select, insert, update, delete on public.profiles to authenticated;
 grant select, insert, update, delete on public.plants to authenticated;
 grant select, insert, update, delete on public.watering_logs to authenticated;
 grant select, insert, update, delete on public.watering_log_photos to authenticated;
 grant select, insert, update, delete on public.plant_snoozes to authenticated;
+grant select, insert, update, delete on public.push_subscriptions to authenticated;
 
 insert into storage.buckets (id, name, public)
 values ('plant-photos', 'plant-photos', true)
@@ -192,3 +205,4 @@ end $$;
 create index if not exists plants_user_id_idx on public.plants(user_id);
 create index if not exists watering_logs_user_plant_date_idx on public.watering_logs(user_id, plant_id, watered_date desc);
 create index if not exists plant_snoozes_plant_id_idx on public.plant_snoozes(plant_id);
+create index if not exists push_subscriptions_user_id_idx on public.push_subscriptions(user_id);

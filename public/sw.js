@@ -32,3 +32,34 @@ self.addEventListener("fetch", (event) => {
       .catch(() => caches.match(event.request).then((cached) => cached || caches.match("/")))
   );
 });
+
+self.addEventListener("push", (event) => {
+  const data = event.data?.json() ?? {};
+  const title = data.title || "PlantLog";
+  const options = {
+    body: data.body || "오늘 식물 기록을 확인해보세요.",
+    icon: "/icons/icon-192.png",
+    badge: "/icons/icon-192.png",
+    data: {
+      url: data.url || "/"
+    }
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url || "/";
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      const matchingClient = clients.find((client) => client.url.includes(self.location.origin));
+      if (matchingClient) {
+        matchingClient.focus();
+        return matchingClient.navigate(url);
+      }
+      return self.clients.openWindow(url);
+    })
+  );
+});
