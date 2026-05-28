@@ -52,6 +52,7 @@ type PlantDataContextValue = {
   notificationTime: string;
   refresh: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  signInWithKakao: () => Promise<void>;
   signOut: () => Promise<void>;
   addPlant: (input: NewPlantInput) => Promise<Plant | null>;
   updatePlant: (plantId: string, input: UpdatePlantInput) => Promise<void>;
@@ -133,6 +134,16 @@ export function AppProviders({ children }: { children: ReactNode }) {
     if (!supabase) return;
     await supabase.auth.signInWithOAuth({
       provider: "google",
+      options: {
+        redirectTo: getAppUrl("/")
+      }
+    });
+  }, [supabase]);
+
+  const signInWithKakao = useCallback(async () => {
+    if (!supabase) return;
+    await supabase.auth.signInWithOAuth({
+      provider: "kakao",
       options: {
         redirectTo: getAppUrl("/")
       }
@@ -406,6 +417,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
       notificationTime,
       refresh,
       signInWithGoogle,
+      signInWithKakao,
       signOut,
       addPlant,
       updatePlant,
@@ -429,6 +441,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
       plants,
       refresh,
       signInWithGoogle,
+      signInWithKakao,
       signOut,
       snoozePlant,
       updateNotificationTime,

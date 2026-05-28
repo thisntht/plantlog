@@ -4,7 +4,7 @@ import { Leaf } from "lucide-react";
 import { usePlantData } from "@/components/AppProviders";
 
 export default function LoginPage() {
-  const { signInWithGoogle, user, isDemo } = usePlantData();
+  const { signInWithGoogle, signInWithKakao, user, isDemo } = usePlantData();
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-6">
@@ -25,7 +25,11 @@ export default function LoginPage() {
         >
           Google로 계속하기
         </button>
-        <button className="h-12 w-full rounded-md border border-neutral-200 bg-white text-sm font-semibold text-neutral-900" type="button">
+        <button
+          className="h-12 w-full rounded-md bg-[#FEE500] text-sm font-semibold text-neutral-950"
+          type="button"
+          onClick={() => void signInWithKakao()}
+        >
           Kakao로 계속하기
         </button>
       </div>
