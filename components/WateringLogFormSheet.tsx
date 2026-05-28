@@ -56,13 +56,24 @@ export function WateringLogFormSheet({
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [toastMessage, setToastMessage] = useState("");
   const { addWateringLog, isDemo, user } = usePlantData();
 
   const toggleCondition = (value: PlantCondition) => {
     setConditions((current) => (current.includes(value) ? current.filter((item) => item !== value) : [...current, value]));
   };
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    window.setTimeout(() => setToastMessage(""), 1400);
+  };
   const addPhotos = (files: FileList | null) => {
-    const nextFiles = [...photoFiles, ...Array.from(files ?? [])].slice(0, 5);
+    const incomingFiles = Array.from(files ?? []);
+    if (photoFiles.length + incomingFiles.length > 5) {
+      showToast("사진은 최대 5장까지 선택할 수 있어요.");
+      return;
+    }
+
+    const nextFiles = [...photoFiles, ...incomingFiles];
     setPhotoFiles(nextFiles);
     setPhotoPreviews(nextFiles.map((file) => URL.createObjectURL(file)));
   };
@@ -185,7 +196,16 @@ export function WateringLogFormSheet({
           <label className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-neutral-300 text-sm font-medium text-neutral-500">
             <Camera aria-hidden className="h-4 w-4" />
             사진 최대 5장
-            <input className="sr-only" type="file" accept="image/*" multiple onChange={(event) => addPhotos(event.target.files)} />
+            <input
+              className="sr-only"
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={(event) => {
+                addPhotos(event.target.files);
+                event.currentTarget.value = "";
+              }}
+            />
           </label>
         ) : null}
 
@@ -201,7 +221,16 @@ export function WateringLogFormSheet({
           {saved ? "저장했어요" : "저장"}
         </button>
       </div>
+      {toastMessage ? <Toast message={toastMessage} /> : null}
     </BottomSheet>
+  );
+}
+
+function Toast({ message }: { message: string }) {
+  return (
+    <div className="pointer-events-none fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-1/2 z-[90] -translate-x-1/2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-800 shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
+      {message}
+    </div>
   );
 }
 

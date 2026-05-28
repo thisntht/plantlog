@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { addMonths, endOfMonth, format, getDay, startOfMonth } from "date-fns";
 import { CalendarDays, ChevronLeft, ChevronRight, Droplets, Edit3, ImageIcon, List, Settings2, Trash2, X } from "lucide-react";
@@ -466,7 +466,25 @@ function PlantMiniCalendar({ logs, onSelect }: { logs: WateringLog[]; onSelect: 
 function Album({ logs, onSelect }: { logs: WateringLog[]; onSelect: (log: WateringLog) => void }) {
   const photos = logs.flatMap((log) => log.photos.map((photo) => ({ photo, log })));
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const selected = selectedIndex === null ? null : photos[selectedIndex];
+  const movePhoto = (amount: number) => {
+    setSelectedIndex((current) => {
+      if (current === null) return current;
+      return Math.min(photos.length - 1, Math.max(0, current + amount));
+    });
+  };
+  const handleTouchEnd = (clientX: number, clientY: number) => {
+    const start = touchStartRef.current;
+    if (!start) return;
+
+    const distanceX = clientX - start.x;
+    const distanceY = clientY - start.y;
+    if (Math.abs(distanceX) > 48 && Math.abs(distanceX) > Math.abs(distanceY) * 1.4) {
+      movePhoto(distanceX < 0 ? 1 : -1);
+    }
+    touchStartRef.current = null;
+  };
 
   if (photos.length === 0) {
     return <p className="rounded-lg border border-neutral-200 bg-white p-4 text-sm text-neutral-500">아직 사진 기록이 없어요.</p>;
@@ -482,7 +500,17 @@ function Album({ logs, onSelect }: { logs: WateringLog[]; onSelect: (log: Wateri
         ))}
       </div>
       {selected ? (
-        <div className="fixed inset-0 z-[80] flex flex-col bg-neutral-950/90 px-4 py-[max(1rem,env(safe-area-inset-top))] text-white">
+        <div
+          className="fixed inset-0 z-[80] flex touch-pan-y flex-col bg-neutral-950/90 px-4 py-[max(1rem,env(safe-area-inset-top))] text-white"
+          onTouchStart={(event) => {
+            const touch = event.touches[0];
+            touchStartRef.current = { x: touch?.clientX ?? 0, y: touch?.clientY ?? 0 };
+          }}
+          onTouchEnd={(event) => {
+            const touch = event.changedTouches[0];
+            handleTouchEnd(touch?.clientX ?? 0, touch?.clientY ?? 0);
+          }}
+        >
           <div className="mb-3 flex items-center justify-between">
             <button className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-white/10" type="button" onClick={() => setSelectedIndex(null)} aria-label="닫기">
               <X aria-hidden className="h-5 w-5" />
@@ -499,7 +527,7 @@ function Album({ logs, onSelect }: { logs: WateringLog[]; onSelect: (log: Wateri
               className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 disabled:opacity-30"
               type="button"
               disabled={selectedIndex === 0}
-              onClick={() => setSelectedIndex((current) => (current === null ? current : Math.max(0, current - 1)))}
+              onClick={() => movePhoto(-1)}
               aria-label="이전 사진"
             >
               <ChevronLeft aria-hidden className="h-6 w-6" />
@@ -518,7 +546,7 @@ function Album({ logs, onSelect }: { logs: WateringLog[]; onSelect: (log: Wateri
               className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 disabled:opacity-30"
               type="button"
               disabled={selectedIndex === photos.length - 1}
-              onClick={() => setSelectedIndex((current) => (current === null ? current : Math.min(photos.length - 1, current + 1)))}
+              onClick={() => movePhoto(1)}
               aria-label="다음 사진"
             >
               <ChevronRight aria-hidden className="h-6 w-6" />
