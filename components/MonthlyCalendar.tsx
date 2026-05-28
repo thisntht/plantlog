@@ -338,7 +338,7 @@ function MonthPickerSheet({
 
   return (
     <BottomSheet title="년월 선택" onClose={onClose}>
-      <div className="grid grid-cols-[1fr_1.2fr] gap-3 pb-2">
+      <div className="grid grid-cols-2 gap-3 pb-2">
         <div className="h-56 overflow-y-auto rounded-md border border-neutral-200 bg-neutral-50 p-1">
           {years.map((year) => (
             <button
@@ -351,12 +351,10 @@ function MonthPickerSheet({
             </button>
           ))}
         </div>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="h-56 overflow-y-auto rounded-md border border-neutral-200 bg-neutral-50 p-1">
           {months.map((monthValue) => (
             <button
-              className={`h-12 rounded-md border text-sm ${
-                monthValue === selectedMonth ? "border-neutral-900 bg-neutral-100 font-semibold text-neutral-950" : "border-neutral-200 text-neutral-500"
-              }`}
+              className={`h-10 w-full rounded text-sm ${monthValue === selectedMonth ? "bg-white font-semibold text-neutral-950" : "text-neutral-500"}`}
               key={monthValue}
               type="button"
               onClick={() => onSelect(new Date(currentYear, monthValue - 1, 1))}
