@@ -1,10 +1,31 @@
 {
   "name": "PlantLog",
   "short_name": "PlantLog",
-  "description": "개인용 식물 물주기 기록 앱",
+  "description": "개인용 식물 기록 앱",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#fbfcf9",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
   "theme_color": "#f4faf5",
-  "icons": []
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
 }
