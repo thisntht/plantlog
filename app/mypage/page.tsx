@@ -153,7 +153,7 @@ export default function MyPage() {
       {logoutConfirmOpen ? (
         <ConfirmOverlay
           title="로그아웃할까요?"
-          description="다시 사용하려면 Google 로그인이 필요합니다."
+          description="다시 사용하려면 로그인이 필요합니다."
           confirmLabel="로그아웃"
           onCancel={() => setLogoutConfirmOpen(false)}
           onConfirm={() => {
