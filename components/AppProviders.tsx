@@ -146,8 +146,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "kakao",
       options: {
-        redirectTo: getAppUrl("/"),
-        scopes: "profile_nickname profile_image"
+        redirectTo: getAppUrl("/")
       }
     });
     if (error) throw error;
