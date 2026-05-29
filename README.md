@@ -51,7 +51,7 @@ profile_image
 
 PlantLog는 카카오 로그인 시 추가 동의항목을 직접 요청하지 않습니다. `account_email`은 Kakao Biz App에서만 사용할 수 있으므로 Supabase Kakao provider 설정에서는 `Allow users without an email`을 켭니다.
 
-현재 Supabase Kakao provider가 `account_email`을 기본 요청해 일반 Kakao 앱에서 KOE205가 발생하므로, Kakao 로그인 버튼은 화면에서 숨겨둡니다. Kakao Biz App 전환 또는 Supabase Kakao provider의 scope 문제가 해결되면 다시 노출합니다.
+Kakao 앱이 개인 개발자 비즈앱으로 전환되어 `account_email` 동의항목을 사용할 수 있으면 Kakao 로그인 버튼을 노출합니다.
 
 ## Push Notifications
 
