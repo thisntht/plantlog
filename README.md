@@ -42,6 +42,15 @@ Vercel 프로덕션 앱으로 돌아오려면 Supabase Auth URL Configuration의
 https://plantlog-sigma.vercel.app
 ```
 
+Kakao Developers의 [카카오 로그인] > [동의항목]에서 아래 항목을 설정합니다.
+
+```text
+profile_nickname
+profile_image
+```
+
+`account_email`은 Kakao Biz App에서만 사용할 수 있으므로 요청하지 않습니다. Supabase Kakao provider 설정에서는 `Allow users without an email`을 켭니다.
+
 ## Push Notifications
 
 Vercel Hobby 배포를 유지하기 위해 Vercel Cron은 사용하지 않습니다. 외부 스케줄러가 5분마다 아래 URL을 호출하게 설정합니다.
