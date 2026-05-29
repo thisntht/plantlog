@@ -5,6 +5,7 @@ import webpush from "web-push";
 type ProfileRow = {
   id: string;
   notification_time: string | null;
+  last_notification_sent_on: string | null;
 };
 
 type PlantRow = {
@@ -33,6 +34,8 @@ type PushSubscriptionRow = {
 
 export const dynamic = "force-dynamic";
 
+const DEFAULT_NOTIFICATION_WINDOW_MINUTES = 5;
+
 function getKstParts() {
   const now = new Date();
   const formatter = new Intl.DateTimeFormat("en-CA", {
@@ -47,8 +50,31 @@ function getKstParts() {
   const parts = Object.fromEntries(formatter.formatToParts(now).map((part) => [part.type, part.value]));
   return {
     date: `${parts.year}-${parts.month}-${parts.day}`,
-    time: `${parts.hour}:${parts.minute}`
+    time: `${parts.hour}:${parts.minute}`,
+    minutes: Number(parts.hour) * 60 + Number(parts.minute)
   };
+}
+
+function getNotificationWindowMinutes() {
+  const value = Number(process.env.NOTIFICATION_WINDOW_MINUTES);
+  if (!Number.isFinite(value) || value < 1) return DEFAULT_NOTIFICATION_WINDOW_MINUTES;
+  return Math.min(Math.floor(value), 60);
+}
+
+function timeToMinutes(value: string) {
+  const [hour, minute] = value.slice(0, 5).split(":").map(Number);
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return null;
+  return hour * 60 + minute;
+}
+
+function isNotificationDue(profile: ProfileRow, nowMinutes: number, today: string, windowMinutes: number) {
+  if (!profile.notification_time || profile.last_notification_sent_on === today) return false;
+
+  const targetMinutes = timeToMinutes(profile.notification_time);
+  if (targetMinutes === null) return false;
+
+  const elapsedMinutes = (nowMinutes - targetMinutes + 24 * 60) % (24 * 60);
+  return elapsedMinutes <= windowMinutes;
 }
 
 function addDaysISO(date: string, days: number) {
@@ -126,9 +152,14 @@ export async function GET(request: Request) {
   webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
 
   const supabase = createClient(url, serviceRoleKey);
-  const { date, time } = getKstParts();
-  const { data: profiles } = await supabase.from("profiles").select("id, notification_time");
-  const targetProfiles = ((profiles ?? []) as ProfileRow[]).filter((profile) => profile.notification_time?.slice(0, 5) === time);
+  const { date, minutes } = getKstParts();
+  const notificationWindowMinutes = getNotificationWindowMinutes();
+  const { data: profiles, error: profilesError } = await supabase.from("profiles").select("id, notification_time, last_notification_sent_on");
+  if (profilesError) {
+    return NextResponse.json({ error: profilesError.message }, { status: 500 });
+  }
+
+  const targetProfiles = ((profiles ?? []) as ProfileRow[]).filter((profile) => isNotificationDue(profile, minutes, date, notificationWindowMinutes));
 
   let sent = 0;
   for (const profile of targetProfiles) {
@@ -141,8 +172,13 @@ export async function GET(request: Request) {
     const duePlants = getDuePlants((plantsResult.data ?? []) as PlantRow[], (logsResult.data ?? []) as LogRow[], (snoozesResult.data ?? []) as SnoozeRow[], date);
     if (duePlants.length === 0) continue;
 
-    sent += await sendPushNotifications(profile.id, duePlants.length);
+    const sentForProfile = await sendPushNotifications(profile.id, duePlants.length);
+    sent += sentForProfile;
+
+    if (sentForProfile > 0) {
+      await supabase.from("profiles").update({ last_notification_sent_on: date }).eq("id", profile.id);
+    }
   }
 
-  return NextResponse.json({ ok: true, checked: targetProfiles.length, sent });
+  return NextResponse.json({ ok: true, checked: targetProfiles.length, sent, windowMinutes: notificationWindowMinutes });
 }

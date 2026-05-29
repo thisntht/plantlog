@@ -28,6 +28,31 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 
 초기 테이블과 RLS 정책은 `supabase/schema.sql`에 있습니다. MVP는 모든 데이터를 본인만 볼 수 있는 private policy로 시작합니다.
 
+### Kakao Login
+
+Supabase Auth에서 Kakao provider를 켜고, Kakao Developers의 Redirect URI에 Supabase callback URL을 등록합니다.
+
+```text
+https://iisiwlpzncuzgryvdwcx.supabase.co/auth/v1/callback
+```
+
+Vercel 프로덕션 앱으로 돌아오려면 Supabase Auth URL Configuration의 Site URL을 아래 주소로 맞춥니다.
+
+```text
+https://plantlog-sigma.vercel.app
+```
+
+## Push Notifications
+
+Vercel Hobby 배포를 유지하기 위해 Vercel Cron은 사용하지 않습니다. 외부 스케줄러가 5분마다 아래 URL을 호출하게 설정합니다.
+
+```text
+GET https://plantlog-sigma.vercel.app/api/notifications/send
+Authorization: Bearer <CRON_SECRET>
+```
+
+Supabase에는 `supabase/add-notification-sent-date.sql`을 한 번 적용해 사용자별 하루 1회 중복 전송을 막는 컬럼을 추가합니다.
+
 ## MVP Coverage
 
 - 홈: 오늘 물줄 식물, 곧 물줄 식물, 오래 확인하지 않은 식물

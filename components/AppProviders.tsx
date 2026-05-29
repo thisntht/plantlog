@@ -131,23 +131,25 @@ export function AppProviders({ children }: { children: ReactNode }) {
   }, [refresh, supabase]);
 
   const signInWithGoogle = useCallback(async () => {
-    if (!supabase) return;
-    await supabase.auth.signInWithOAuth({
+    if (!supabase) throw new Error("Supabase 환경변수가 설정되지 않았어요.");
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: getAppUrl("/")
       }
     });
+    if (error) throw error;
   }, [supabase]);
 
   const signInWithKakao = useCallback(async () => {
-    if (!supabase) return;
-    await supabase.auth.signInWithOAuth({
+    if (!supabase) throw new Error("Supabase 환경변수가 설정되지 않았어요.");
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: "kakao",
       options: {
         redirectTo: getAppUrl("/")
       }
     });
+    if (error) throw error;
   }, [supabase]);
 
   const signOut = useCallback(async () => {

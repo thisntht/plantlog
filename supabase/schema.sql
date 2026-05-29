@@ -3,6 +3,7 @@ create table if not exists public.profiles (
   display_name text,
   avatar_url text,
   notification_time time default '20:00',
+  last_notification_sent_on date,
   is_public boolean not null default false,
   created_at timestamptz not null default now()
 );
@@ -65,6 +66,9 @@ alter table public.push_subscriptions enable row level security;
 
 alter table public.watering_logs
   add column if not exists log_type text not null default 'watering';
+
+alter table public.profiles
+  add column if not exists last_notification_sent_on date;
 
 do $$
 begin
