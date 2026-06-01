@@ -11,6 +11,7 @@ import { usePlantData } from "@/components/AppProviders";
 import { urlBase64ToUint8Array } from "@/lib/push";
 import { profile } from "@/lib/sample-data";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 const PUSH_ENABLED_STORAGE_KEY = "plantlog:push-enabled";
 
@@ -45,6 +46,12 @@ function withTimeout<T>(promise: Promise<T>, milliseconds: number, message: stri
       window.setTimeout(() => reject(new Error(message)), milliseconds);
     })
   ]);
+}
+
+function delay(milliseconds: number) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, milliseconds);
+  });
 }
 
 export default function MyPage() {
@@ -120,6 +127,29 @@ export default function MyPage() {
       addDebugLine?.("serviceWorker.register", "성공");
       return registration;
     }
+  };
+
+  const getCurrentSession = async (supabase: SupabaseClient, addDebugLine?: (label: string, value: string) => void) => {
+    let lastErrorMessage = "";
+
+    const maxAttempts = 10;
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      const {
+        data: { session },
+        error
+      } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        addDebugLine?.("Supabase session", attempt === 1 ? "있음" : `있음 (${attempt}회차)`);
+        return session;
+      }
+
+      lastErrorMessage = error?.message ?? "";
+      addDebugLine?.("Supabase session", `대기 중 (${attempt}/${maxAttempts})${lastErrorMessage ? ` ${lastErrorMessage}` : ""}`);
+      await delay(300);
+    }
+
+    addDebugLine?.("Supabase session", `없음${lastErrorMessage ? ` (${lastErrorMessage})` : ""}`);
+    return null;
   };
 
   const getPushSubscription = async (publicKey: string, addDebugLine?: (label: string, value: string) => void) => {
@@ -207,12 +237,8 @@ export default function MyPage() {
       showToast("Supabase 설정을 확인하지 못했어요.");
       return;
     }
-    const {
-      data: { session },
-      error: sessionError
-    } = await supabase.auth.getSession();
-    addDebugLine("Supabase session", session?.access_token ? "있음" : `없음${sessionError ? ` (${sessionError.message})` : ""}`);
-    if (!session?.access_token) {
+    const session = await getCurrentSession(supabase, addDebugLine);
+    if (!session) {
       setPushState("idle");
       showToast("로그인 세션을 확인하지 못했어요.");
       return;
@@ -271,12 +297,8 @@ export default function MyPage() {
       addDebugLine("Supabase 설정", "없음");
       return;
     }
-    const {
-      data: { session },
-      error: sessionError
-    } = await supabase.auth.getSession();
-    addDebugLine("Supabase session", session?.access_token ? "있음" : `없음${sessionError ? ` (${sessionError.message})` : ""}`);
-    if (!session?.access_token) return;
+    const session = await getCurrentSession(supabase, addDebugLine);
+    if (!session) return;
 
     try {
       const response = await fetch("/api/push/debug", {
@@ -317,9 +339,7 @@ export default function MyPage() {
       showToast("푸시 알림이 꺼졌어요.");
       return;
     }
-    const {
-      data: { session }
-    } = await supabase.auth.getSession();
+    const session = await getCurrentSession(supabase);
     if (session?.access_token) {
       const response = await fetch("/api/push/subscribe", {
         method: "DELETE",
@@ -367,7 +387,12 @@ export default function MyPage() {
         </button>
         {user ? (
           <div className="rounded-lg border border-neutral-200 bg-white">
-            <button className="flex w-full items-center gap-3 p-4 text-left" type="button" onClick={() => (pushState === "enabled" ? void disablePush() : void enablePush())}>
+            <button
+              className="flex w-full items-center gap-3 p-4 text-left disabled:opacity-60"
+              type="button"
+              disabled={pushState === "saving"}
+              onClick={() => (pushState === "enabled" ? void disablePush() : void enablePush())}
+            >
               <span className="text-neutral-500">
                 <Bell className="h-4 w-4" />
               </span>
