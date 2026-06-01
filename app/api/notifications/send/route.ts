@@ -80,14 +80,13 @@ function timeToMinutes(value: string) {
   return hour * 60 + minute;
 }
 
-function isNotificationDue(profile: ProfileRow, nowMinutes: number, today: string, windowMinutes: number) {
+function isNotificationDue(profile: ProfileRow, nowMinutes: number, today: string) {
   if (!profile.notification_time || profile.last_notification_sent_on === today) return false;
 
   const targetMinutes = timeToMinutes(profile.notification_time);
   if (targetMinutes === null) return false;
 
-  const elapsedMinutes = (nowMinutes - targetMinutes + 24 * 60) % (24 * 60);
-  return elapsedMinutes <= windowMinutes;
+  return nowMinutes >= targetMinutes;
 }
 
 function addDaysISO(date: string, days: number) {
@@ -169,14 +168,14 @@ export async function GET(request: Request) {
   webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
 
   const supabase = createClient(url, serviceRoleKey);
-  const { date, minutes } = getKstParts();
+  const { date, time, minutes } = getKstParts();
   const notificationWindowMinutes = getNotificationWindowMinutes();
   const { data: profiles, error: profilesError } = await supabase.from("profiles").select("id, notification_time, last_notification_sent_on");
   if (profilesError) {
     return NextResponse.json({ error: profilesError.message }, { status: 500 });
   }
 
-  const targetProfiles = ((profiles ?? []) as ProfileRow[]).filter((profile) => isNotificationDue(profile, minutes, date, notificationWindowMinutes));
+  const targetProfiles = ((profiles ?? []) as ProfileRow[]).filter((profile) => isNotificationDue(profile, minutes, date));
 
   let sent = 0;
   for (const profile of targetProfiles) {
@@ -195,5 +194,5 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.json({ ok: true, checked: targetProfiles.length, sent, windowMinutes: notificationWindowMinutes });
+  return NextResponse.json({ ok: true, checked: targetProfiles.length, sent, date, time, windowMinutes: notificationWindowMinutes });
 }
