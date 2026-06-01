@@ -187,8 +187,6 @@ export async function GET(request: Request) {
     ]);
 
     const duePlants = getDuePlants((plantsResult.data ?? []) as PlantRow[], (logsResult.data ?? []) as LogRow[], (snoozesResult.data ?? []) as SnoozeRow[], date);
-    if (duePlants.length === 0) continue;
-
     const sentForProfile = await sendPushNotifications(profile.id, duePlants.length);
     sent += sentForProfile;
 
