@@ -14,6 +14,39 @@ import { createClient } from "@/lib/supabase/client";
 
 const PUSH_ENABLED_STORAGE_KEY = "plantlog:push-enabled";
 
+type PushDebugLine = {
+  label: string;
+  value: string;
+};
+
+function describeError(error: unknown) {
+  if (error instanceof Error) return `${error.name}: ${error.message}`;
+  if (typeof error === "string") return error;
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return "알 수 없는 오류";
+  }
+}
+
+function shortenEndpoint(endpoint?: string | null) {
+  if (!endpoint) return "없음";
+  return endpoint.length > 18 ? `...${endpoint.slice(-18)}` : endpoint;
+}
+
+function isStandalonePwa() {
+  return window.matchMedia("(display-mode: standalone)").matches || Boolean("standalone" in navigator && (navigator as Navigator & { standalone?: boolean }).standalone);
+}
+
+function withTimeout<T>(promise: Promise<T>, milliseconds: number, message: string) {
+  return Promise.race<T>([
+    promise,
+    new Promise<T>((_, reject) => {
+      window.setTimeout(() => reject(new Error(message)), milliseconds);
+    })
+  ]);
+}
+
 export default function MyPage() {
   const { user, signOut, isDemo, notificationTime, updateNotificationTime } = usePlantData();
   const [selectedHour, selectedMinute] = notificationTime.split(":");
@@ -21,6 +54,7 @@ export default function MyPage() {
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [pushState, setPushState] = useState<"idle" | "saving" | "enabled" | "blocked" | "unsupported" | "missing-key">("idle");
   const [toastMessage, setToastMessage] = useState("");
+  const [pushDebugLines, setPushDebugLines] = useState<PushDebugLine[]>([]);
 
   const showToast = (message: string) => {
     setToastMessage(message);
@@ -73,28 +107,59 @@ export default function MyPage() {
     };
   }, [user]);
 
-  const getPushSubscription = async (publicKey: string) => {
-    let registration = await navigator.serviceWorker.ready;
+  const getReadyRegistration = async (addDebugLine?: (label: string, value: string) => void) => {
+    addDebugLine?.("serviceWorker.ready", "대기 중");
+    try {
+      const registration = await withTimeout(navigator.serviceWorker.ready, 5000, "serviceWorker.ready timeout");
+      addDebugLine?.("serviceWorker.ready", "성공");
+      return registration;
+    } catch (error) {
+      addDebugLine?.("serviceWorker.ready 실패", describeError(error));
+      addDebugLine?.("serviceWorker.register", "재등록 시도 중");
+      const registration = await navigator.serviceWorker.register("/sw.js");
+      addDebugLine?.("serviceWorker.register", "성공");
+      return registration;
+    }
+  };
+
+  const getPushSubscription = async (publicKey: string, addDebugLine?: (label: string, value: string) => void) => {
+    let registration = await getReadyRegistration(addDebugLine);
     const existing = await registration.pushManager.getSubscription();
+    addDebugLine?.("getSubscription", existing ? `있음 ${shortenEndpoint(existing.endpoint)}` : "없음");
     if (existing) return existing;
 
     try {
-      return await registration.pushManager.subscribe({
+      addDebugLine?.("subscribe", "시도 중");
+      const nextSubscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicKey)
       });
+      addDebugLine?.("subscribe", `성공 ${shortenEndpoint(nextSubscription.endpoint)}`);
+      return nextSubscription;
     } catch (error) {
       console.error("Push subscribe failed. Retrying after service worker registration.", error);
+      addDebugLine?.("subscribe 1차 실패", describeError(error));
+      addDebugLine?.("serviceWorker.register", "재등록 시도 중");
       registration = await navigator.serviceWorker.register("/sw.js");
-      return registration.pushManager.subscribe({
+      addDebugLine?.("serviceWorker.register", "성공");
+      const retrySubscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicKey)
       });
+      addDebugLine?.("subscribe 재시도", `성공 ${shortenEndpoint(retrySubscription.endpoint)}`);
+      return retrySubscription;
     }
   };
 
   const enablePush = async () => {
+    const debugLines: PushDebugLine[] = [];
+    const addDebugLine = (label: string, value: string) => {
+      debugLines.push({ label, value });
+      setPushDebugLines([...debugLines]);
+    };
+
     const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+    addDebugLine("VAPID public key", publicKey ? "있음" : "없음");
     if (!publicKey) {
       setPushState("missing-key");
       showToast("푸시 알림 키 설정이 필요해요.");
@@ -102,6 +167,7 @@ export default function MyPage() {
     }
     if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
       setPushState("unsupported");
+      addDebugLine("지원 여부", `serviceWorker=${"serviceWorker" in navigator}, PushManager=${"PushManager" in window}, Notification=${"Notification" in window}`);
       showToast("이 브라우저에서는 푸시 알림을 지원하지 않아요.");
       return;
     }
@@ -112,7 +178,11 @@ export default function MyPage() {
     }
 
     setPushState("saving");
+    addDebugLine("지원 여부", "지원됨");
+    addDebugLine("standalone", isStandalonePwa() ? "예" : "아니오");
+    addDebugLine("permission 이전", Notification.permission);
     const permission = await Notification.requestPermission();
+    addDebugLine("permission 이후", permission);
     if (permission !== "granted") {
       setPushState("blocked");
       showToast("브라우저 알림 권한이 꺼져 있어요.");
@@ -121,30 +191,40 @@ export default function MyPage() {
 
     let subscription: PushSubscription;
     try {
-      subscription = await getPushSubscription(publicKey);
+      subscription = await getPushSubscription(publicKey, addDebugLine);
     } catch (error) {
       console.error("Failed to create push subscription", error);
+      addDebugLine("구독 생성 실패", describeError(error));
       setPushState("idle");
       showToast("푸시 알림을 켜지 못했어요.");
       return;
     }
 
     const supabase = createClient();
-    const { error: deleteError } = await supabase.from("push_subscriptions").delete().eq("endpoint", subscription.endpoint);
-    if (deleteError) {
-      console.error("Failed to clear push subscription", deleteError);
+    const {
+      data: { session },
+      error: sessionError
+    } = await supabase.auth.getSession();
+    addDebugLine("Supabase session", session?.access_token ? "있음" : `없음${sessionError ? ` (${sessionError.message})` : ""}`);
+    if (!session?.access_token) {
       setPushState("idle");
-      showToast("푸시 알림을 저장하지 못했어요.");
+      showToast("로그인 세션을 확인하지 못했어요.");
       return;
     }
 
-    const { error: insertError } = await supabase.from("push_subscriptions").insert({
-      user_id: user.id,
-      endpoint: subscription.endpoint,
-      subscription
+    addDebugLine("API 저장", "요청 중");
+    const saveResponse = await fetch("/api/push/subscribe", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(subscription)
     });
-    if (insertError) {
-      console.error("Failed to save push subscription", insertError);
+    const saveResult = await saveResponse.json().catch(() => null);
+    addDebugLine("API 저장 응답", `${saveResponse.status} ${saveResponse.ok ? "OK" : saveResult?.error ?? "실패"}`);
+    if (!saveResponse.ok) {
+      console.error("Failed to save push subscription", saveResult);
       setPushState("idle");
       showToast("푸시 알림을 저장하지 못했어요.");
       return;
@@ -153,6 +233,60 @@ export default function MyPage() {
     setStoredPushEnabled(true);
     setPushState("enabled");
     showToast("푸시 알림이 켜졌어요.");
+  };
+
+  const runPushDiagnostics = async () => {
+    const debugLines: PushDebugLine[] = [];
+    const addDebugLine = (label: string, value: string) => {
+      debugLines.push({ label, value });
+      setPushDebugLines([...debugLines]);
+    };
+
+    addDebugLine("user", user ? "있음" : "없음");
+    addDebugLine("serviceWorker", "serviceWorker" in navigator ? "지원" : "미지원");
+    addDebugLine("PushManager", "PushManager" in window ? "지원" : "미지원");
+    addDebugLine("Notification", "Notification" in window ? Notification.permission : "미지원");
+    addDebugLine("standalone", isStandalonePwa() ? "예" : "아니오");
+
+    let endpoint: string | null = null;
+    if ("serviceWorker" in navigator && "PushManager" in window) {
+      try {
+        const registration = await getReadyRegistration(addDebugLine);
+        const subscription = await registration.pushManager.getSubscription();
+        endpoint = subscription?.endpoint ?? null;
+        addDebugLine("getSubscription", subscription ? `있음 ${shortenEndpoint(subscription.endpoint)}` : "없음");
+      } catch (error) {
+        addDebugLine("serviceWorker/getSubscription 실패", describeError(error));
+      }
+    }
+
+    const supabase = createClient();
+    const {
+      data: { session },
+      error: sessionError
+    } = await supabase.auth.getSession();
+    addDebugLine("Supabase session", session?.access_token ? "있음" : `없음${sessionError ? ` (${sessionError.message})` : ""}`);
+    if (!session?.access_token) return;
+
+    try {
+      const response = await fetch("/api/push/debug", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ endpoint })
+      });
+      const result = await response.json().catch(() => null);
+      addDebugLine("debug API", `${response.status} ${response.ok ? "OK" : result?.error ?? "실패"}`);
+      if (result?.env) addDebugLine("서버 env", `url=${result.env.supabaseUrl}, service=${result.env.serviceRoleKey}, vapid=${result.env.vapidPublicKey}`);
+      if (result?.subscriptions) {
+        addDebugLine("DB 구독 수", String(result.subscriptions.userCount));
+        addDebugLine("현재 endpoint DB", result.subscriptions.endpointFound ? "있음" : "없음");
+      }
+    } catch (error) {
+      addDebugLine("debug API 실패", describeError(error));
+    }
   };
 
   const disablePush = async () => {
@@ -169,8 +303,20 @@ export default function MyPage() {
     }
 
     const supabase = createClient();
-    const { error } = await supabase.from("push_subscriptions").delete().eq("user_id", user.id).eq("endpoint", subscription.endpoint);
-    if (error) console.error("Failed to delete push subscription", error);
+    const {
+      data: { session }
+    } = await supabase.auth.getSession();
+    if (session?.access_token) {
+      const response = await fetch("/api/push/subscribe", {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ endpoint: subscription.endpoint })
+      });
+      if (!response.ok) console.error("Failed to delete push subscription", await response.json().catch(() => null));
+    }
 
     showToast("푸시 알림이 꺼졌어요.");
   };
@@ -206,19 +352,32 @@ export default function MyPage() {
           <span className="font-mono text-sm text-neutral-500">{notificationTime}</span>
         </button>
         {user ? (
-          <button
-            className="flex w-full items-center gap-3 rounded-lg border border-neutral-200 bg-white p-4 text-left"
-            type="button"
-            onClick={() => (pushState === "enabled" ? void disablePush() : void enablePush())}
-          >
-            <span className="text-neutral-500">
-              <Bell className="h-4 w-4" />
-            </span>
-            <span className="flex-1 text-sm font-medium text-neutral-800">푸시 알림</span>
-            <span className="text-sm text-neutral-500">
-              {pushState === "saving" ? "설정 중" : pushState === "enabled" ? "켜짐" : pushState === "blocked" ? "차단됨" : "꺼짐"}
-            </span>
-          </button>
+          <div className="rounded-lg border border-neutral-200 bg-white">
+            <button className="flex w-full items-center gap-3 p-4 text-left" type="button" onClick={() => (pushState === "enabled" ? void disablePush() : void enablePush())}>
+              <span className="text-neutral-500">
+                <Bell className="h-4 w-4" />
+              </span>
+              <span className="flex-1 text-sm font-medium text-neutral-800">푸시 알림</span>
+              <span className="text-sm text-neutral-500">
+                {pushState === "saving" ? "설정 중" : pushState === "enabled" ? "켜짐" : pushState === "blocked" ? "차단됨" : "꺼짐"}
+              </span>
+            </button>
+            <div className="border-t border-neutral-100 px-4 pb-4">
+              <button className="mt-3 h-9 rounded-md border border-neutral-200 px-3 text-xs font-medium text-neutral-600" type="button" onClick={() => void runPushDiagnostics()}>
+                푸시 진단
+              </button>
+              {pushDebugLines.length > 0 ? (
+                <dl className="mt-3 space-y-1 rounded-md bg-neutral-50 p-3 text-xs text-neutral-600">
+                  {pushDebugLines.map((line, index) => (
+                    <div className="grid grid-cols-[6.5rem_1fr] gap-2" key={`${line.label}-${index}`}>
+                      <dt className="font-medium text-neutral-500">{line.label}</dt>
+                      <dd className="break-words text-neutral-800">{line.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : null}
+            </div>
+          </div>
         ) : null}
         <SettingRow icon={<Lock className="h-4 w-4" />} label="공개 여부" value={profile.isPublic ? "공개" : "비공개"} />
       </section>
