@@ -12,6 +12,8 @@ import { urlBase64ToUint8Array } from "@/lib/push";
 import { profile } from "@/lib/sample-data";
 import { createClient } from "@/lib/supabase/client";
 
+const PUSH_ENABLED_STORAGE_KEY = "plantlog:push-enabled";
+
 export default function MyPage() {
   const { user, signOut, isDemo, notificationTime, updateNotificationTime } = usePlantData();
   const [selectedHour, selectedMinute] = notificationTime.split(":");
@@ -34,6 +36,22 @@ export default function MyPage() {
     return session?.access_token ?? null;
   };
 
+  const getStoredPushEnabled = () => {
+    try {
+      return window.localStorage.getItem(PUSH_ENABLED_STORAGE_KEY);
+    } catch {
+      return null;
+    }
+  };
+
+  const setStoredPushEnabled = (enabled: boolean) => {
+    try {
+      window.localStorage.setItem(PUSH_ENABLED_STORAGE_KEY, enabled ? "true" : "false");
+    } catch {
+      // Local storage can be unavailable in private browsing modes.
+    }
+  };
+
   useEffect(() => {
     if (!user) return;
     if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
@@ -49,7 +67,12 @@ export default function MyPage() {
     navigator.serviceWorker.ready
       .then((registration) => registration.pushManager.getSubscription())
       .then((subscription) => {
-        if (active) setPushState(subscription ? "enabled" : "idle");
+        if (!active) return;
+        if (getStoredPushEnabled() === "false") {
+          setPushState("idle");
+          return;
+        }
+        setPushState(subscription ? "enabled" : "idle");
       })
       .catch(() => {
         if (active) setPushState("idle");
@@ -109,6 +132,7 @@ export default function MyPage() {
       return;
     }
 
+    setStoredPushEnabled(true);
     setPushState("enabled");
     showToast("푸시 알림이 켜졌어요.");
   };
@@ -116,6 +140,7 @@ export default function MyPage() {
   const disablePush = async () => {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
 
+    setStoredPushEnabled(false);
     const registration = await navigator.serviceWorker.ready;
     const subscription = await registration.pushManager.getSubscription();
     if (!subscription) {
