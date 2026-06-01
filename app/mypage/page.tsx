@@ -104,14 +104,29 @@ export default function MyPage() {
       return;
     }
 
-    const registration = await navigator.serviceWorker.ready;
+    let registration = await navigator.serviceWorker.ready;
     const existing = await registration.pushManager.getSubscription();
-    const subscription =
-      existing ??
-      (await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey)
-      }));
+    let subscription = existing;
+    if (!subscription) {
+      try {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(publicKey)
+        });
+      } catch {
+        registration = await navigator.serviceWorker.register("/sw.js");
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(publicKey)
+        });
+      }
+    }
+
+    if (!subscription) {
+      setPushState("idle");
+      showToast("?몄떆 ?뚮┝????ν븯吏 紐삵뻽?댁슂.");
+      return;
+    }
 
     const accessToken = await getAccessToken();
     if (!accessToken) {
@@ -159,7 +174,6 @@ export default function MyPage() {
       headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
       body: JSON.stringify({ endpoint: subscription.endpoint })
     });
-    await subscription.unsubscribe();
     setPushState("idle");
     showToast("푸시 알림이 꺼졌어요.");
   };
