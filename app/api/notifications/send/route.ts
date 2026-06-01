@@ -34,7 +34,8 @@ type PushSubscriptionRow = {
 
 export const dynamic = "force-dynamic";
 
-const DEFAULT_NOTIFICATION_WINDOW_MINUTES = 5;
+const DEFAULT_NOTIFICATION_WINDOW_MINUTES = 15;
+const MIN_NOTIFICATION_WINDOW_MINUTES = 15;
 
 function getJwtRole(token: string) {
   try {
@@ -71,7 +72,7 @@ function getKstParts() {
 function getNotificationWindowMinutes() {
   const value = Number(process.env.NOTIFICATION_WINDOW_MINUTES);
   if (!Number.isFinite(value) || value < 1) return DEFAULT_NOTIFICATION_WINDOW_MINUTES;
-  return Math.min(Math.floor(value), 60);
+  return Math.min(Math.max(Math.floor(value), MIN_NOTIFICATION_WINDOW_MINUTES), 60);
 }
 
 function timeToMinutes(value: string) {
@@ -80,13 +81,14 @@ function timeToMinutes(value: string) {
   return hour * 60 + minute;
 }
 
-function isNotificationDue(profile: ProfileRow, nowMinutes: number, today: string) {
+function isNotificationDue(profile: ProfileRow, nowMinutes: number, today: string, windowMinutes: number) {
   if (!profile.notification_time || profile.last_notification_sent_on === today) return false;
 
   const targetMinutes = timeToMinutes(profile.notification_time);
   if (targetMinutes === null) return false;
 
-  return nowMinutes >= targetMinutes;
+  const elapsedMinutes = nowMinutes - targetMinutes;
+  return elapsedMinutes >= 0 && elapsedMinutes <= windowMinutes;
 }
 
 function addDaysISO(date: string, days: number) {
@@ -175,7 +177,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: profilesError.message }, { status: 500 });
   }
 
-  const targetProfiles = ((profiles ?? []) as ProfileRow[]).filter((profile) => isNotificationDue(profile, minutes, date));
+  const targetProfiles = ((profiles ?? []) as ProfileRow[]).filter((profile) => isNotificationDue(profile, minutes, date, notificationWindowMinutes));
 
   let sent = 0;
   for (const profile of targetProfiles) {
