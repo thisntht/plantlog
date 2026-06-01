@@ -10,7 +10,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { usePlantData } from "@/components/AppProviders";
 import { urlBase64ToUint8Array } from "@/lib/push";
 import { profile } from "@/lib/sample-data";
-import { createClient } from "@/lib/supabase/client";
+import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 
 const PUSH_ENABLED_STORAGE_KEY = "plantlog:push-enabled";
 
@@ -200,7 +200,13 @@ export default function MyPage() {
       return;
     }
 
-    const supabase = createClient();
+    const supabase = createBrowserSupabaseClient();
+    if (!supabase) {
+      addDebugLine("Supabase 설정", "없음");
+      setPushState("idle");
+      showToast("Supabase 설정을 확인하지 못했어요.");
+      return;
+    }
     const {
       data: { session },
       error: sessionError
@@ -260,7 +266,11 @@ export default function MyPage() {
       }
     }
 
-    const supabase = createClient();
+    const supabase = createBrowserSupabaseClient();
+    if (!supabase) {
+      addDebugLine("Supabase 설정", "없음");
+      return;
+    }
     const {
       data: { session },
       error: sessionError
@@ -302,7 +312,11 @@ export default function MyPage() {
       return;
     }
 
-    const supabase = createClient();
+    const supabase = createBrowserSupabaseClient();
+    if (!supabase) {
+      showToast("푸시 알림이 꺼졌어요.");
+      return;
+    }
     const {
       data: { session }
     } = await supabase.auth.getSession();
