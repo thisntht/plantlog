@@ -1,5 +1,17 @@
 import { NextResponse } from "next/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+
+function createServiceClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url || !serviceRoleKey) {
+    throw new Error("Missing Supabase service role environment variables");
+  }
+
+  return createSupabaseClient(url, serviceRoleKey);
+}
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -12,7 +24,8 @@ export async function POST(request: Request) {
   const subscription = await request.json();
   if (!subscription?.endpoint) return NextResponse.json({ error: "Invalid subscription" }, { status: 400 });
 
-  const { error } = await supabase.from("push_subscriptions").upsert(
+  const serviceSupabase = createServiceClient();
+  const { error } = await serviceSupabase.from("push_subscriptions").upsert(
     {
       user_id: user.id,
       endpoint: subscription.endpoint,
@@ -37,7 +50,8 @@ export async function DELETE(request: Request) {
   const { endpoint } = await request.json();
   if (!endpoint) return NextResponse.json({ error: "Invalid endpoint" }, { status: 400 });
 
-  const { error } = await supabase.from("push_subscriptions").delete().eq("user_id", user.id).eq("endpoint", endpoint);
+  const serviceSupabase = createServiceClient();
+  const { error } = await serviceSupabase.from("push_subscriptions").delete().eq("user_id", user.id).eq("endpoint", endpoint);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({ ok: true });

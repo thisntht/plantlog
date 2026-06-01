@@ -21,6 +21,6 @@ begin
   end if;
 end $$;
 
-grant select, insert, update, delete on public.push_subscriptions to authenticated;
+grant select, insert, update, delete on public.push_subscriptions to authenticated, service_role;
 
 create index if not exists push_subscriptions_user_id_idx on public.push_subscriptions(user_id);

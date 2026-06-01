@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Bell, Lock, UserRound } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
@@ -23,6 +23,32 @@ export default function MyPage() {
     setToastMessage(message);
     window.setTimeout(() => setToastMessage(""), 1600);
   };
+
+  useEffect(() => {
+    if (!user) return;
+    if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+      setPushState("unsupported");
+      return;
+    }
+    if (Notification.permission === "denied") {
+      setPushState("blocked");
+      return;
+    }
+
+    let active = true;
+    navigator.serviceWorker.ready
+      .then((registration) => registration.pushManager.getSubscription())
+      .then((subscription) => {
+        if (active) setPushState(subscription ? "enabled" : "idle");
+      })
+      .catch(() => {
+        if (active) setPushState("idle");
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   const enablePush = async () => {
     const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
