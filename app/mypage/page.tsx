@@ -27,15 +27,6 @@ export default function MyPage() {
     window.setTimeout(() => setToastMessage(""), 1600);
   };
 
-  const getAccessToken = async () => {
-    const supabase = createClient();
-    const {
-      data: { session }
-    } = await supabase.auth.getSession();
-
-    return session?.access_token ?? null;
-  };
-
   const getStoredPushEnabled = () => {
     try {
       return window.localStorage.getItem(PUSH_ENABLED_STORAGE_KEY);
@@ -62,17 +53,16 @@ export default function MyPage() {
       setPushState("blocked");
       return;
     }
+    if (getStoredPushEnabled() === "false") {
+      setPushState("idle");
+      return;
+    }
 
     let active = true;
     navigator.serviceWorker.ready
       .then((registration) => registration.pushManager.getSubscription())
       .then((subscription) => {
-        if (!active) return;
-        if (getStoredPushEnabled() === "false") {
-          setPushState("idle");
-          return;
-        }
-        setPushState(subscription ? "enabled" : "idle");
+        if (active) setPushState(subscription ? "enabled" : "idle");
       })
       .catch(() => {
         if (active) setPushState("idle");
@@ -82,6 +72,26 @@ export default function MyPage() {
       active = false;
     };
   }, [user]);
+
+  const getPushSubscription = async (publicKey: string) => {
+    let registration = await navigator.serviceWorker.ready;
+    const existing = await registration.pushManager.getSubscription();
+    if (existing) return existing;
+
+    try {
+      return await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey)
+      });
+    } catch (error) {
+      console.error("Push subscribe failed. Retrying after service worker registration.", error);
+      registration = await navigator.serviceWorker.register("/sw.js");
+      return registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey)
+      });
+    }
+  };
 
   const enablePush = async () => {
     const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
@@ -95,6 +105,11 @@ export default function MyPage() {
       showToast("이 브라우저에서는 푸시 알림을 지원하지 않아요.");
       return;
     }
+    if (!user) {
+      setPushState("idle");
+      showToast("로그인이 필요해요.");
+      return;
+    }
 
     setPushState("saving");
     const permission = await Notification.requestPermission();
@@ -104,44 +119,32 @@ export default function MyPage() {
       return;
     }
 
-    let registration = await navigator.serviceWorker.ready;
-    const existing = await registration.pushManager.getSubscription();
-    let subscription = existing;
-    if (!subscription) {
-      try {
-        subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(publicKey)
-        });
-      } catch {
-        registration = await navigator.serviceWorker.register("/sw.js");
-        subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(publicKey)
-        });
-      }
-    }
-
-    if (!subscription) {
+    let subscription: PushSubscription;
+    try {
+      subscription = await getPushSubscription(publicKey);
+    } catch (error) {
+      console.error("Failed to create push subscription", error);
       setPushState("idle");
-      showToast("?몄떆 ?뚮┝????ν븯吏 紐삵뻽?댁슂.");
+      showToast("푸시 알림을 켜지 못했어요.");
       return;
     }
 
-    const accessToken = await getAccessToken();
-    if (!accessToken) {
+    const supabase = createClient();
+    const { error: deleteError } = await supabase.from("push_subscriptions").delete().eq("endpoint", subscription.endpoint);
+    if (deleteError) {
+      console.error("Failed to clear push subscription", deleteError);
       setPushState("idle");
-      showToast("?몄떆 ?뚮┝????ν븯吏 紐삵뻽?댁슂.");
+      showToast("푸시 알림을 저장하지 못했어요.");
       return;
     }
 
-    const response = await fetch("/api/push/subscribe", {
-      method: "POST",
-      headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
-      body: JSON.stringify(subscription)
+    const { error: insertError } = await supabase.from("push_subscriptions").insert({
+      user_id: user.id,
+      endpoint: subscription.endpoint,
+      subscription
     });
-
-    if (!response.ok) {
+    if (insertError) {
+      console.error("Failed to save push subscription", insertError);
       setPushState("idle");
       showToast("푸시 알림을 저장하지 못했어요.");
       return;
@@ -156,25 +159,19 @@ export default function MyPage() {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
 
     setStoredPushEnabled(false);
+    setPushState("idle");
+
     const registration = await navigator.serviceWorker.ready;
     const subscription = await registration.pushManager.getSubscription();
-    if (!subscription) {
-      setPushState("idle");
+    if (!subscription || !user) {
+      showToast("푸시 알림이 꺼졌어요.");
       return;
     }
 
-    const accessToken = await getAccessToken();
-    if (!accessToken) {
-      setPushState("idle");
-      return;
-    }
+    const supabase = createClient();
+    const { error } = await supabase.from("push_subscriptions").delete().eq("user_id", user.id).eq("endpoint", subscription.endpoint);
+    if (error) console.error("Failed to delete push subscription", error);
 
-    await fetch("/api/push/subscribe", {
-      method: "DELETE",
-      headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ endpoint: subscription.endpoint })
-    });
-    setPushState("idle");
     showToast("푸시 알림이 꺼졌어요.");
   };
 
