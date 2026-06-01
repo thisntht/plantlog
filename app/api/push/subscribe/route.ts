@@ -25,16 +25,16 @@ export async function POST(request: Request) {
   if (!subscription?.endpoint) return NextResponse.json({ error: "Invalid subscription" }, { status: 400 });
 
   const serviceSupabase = createServiceClient();
-  const { error } = await serviceSupabase.from("push_subscriptions").upsert(
-    {
-      user_id: user.id,
-      endpoint: subscription.endpoint,
-      subscription
-    },
-    { onConflict: "endpoint" }
-  );
+  const { error: deleteError } = await serviceSupabase.from("push_subscriptions").delete().eq("endpoint", subscription.endpoint);
+  if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 500 });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  const { error: insertError } = await serviceSupabase.from("push_subscriptions").insert({
+    user_id: user.id,
+    endpoint: subscription.endpoint,
+    subscription
+  });
+
+  if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 });
 
   return NextResponse.json({ ok: true });
 }
