@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { usePlantData } from "@/components/AppProviders";
 import { urlBase64ToUint8Array } from "@/lib/push";
 import { profile } from "@/lib/sample-data";
+import { createClient } from "@/lib/supabase/client";
 
 export default function MyPage() {
   const { user, signOut, isDemo, notificationTime, updateNotificationTime } = usePlantData();
@@ -22,6 +23,15 @@ export default function MyPage() {
   const showToast = (message: string) => {
     setToastMessage(message);
     window.setTimeout(() => setToastMessage(""), 1600);
+  };
+
+  const getAccessToken = async () => {
+    const supabase = createClient();
+    const {
+      data: { session }
+    } = await supabase.auth.getSession();
+
+    return session?.access_token ?? null;
   };
 
   useEffect(() => {
@@ -80,9 +90,16 @@ export default function MyPage() {
         applicationServerKey: urlBase64ToUint8Array(publicKey)
       }));
 
+    const accessToken = await getAccessToken();
+    if (!accessToken) {
+      setPushState("idle");
+      showToast("?몄떆 ?뚮┝????ν븯吏 紐삵뻽?댁슂.");
+      return;
+    }
+
     const response = await fetch("/api/push/subscribe", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
       body: JSON.stringify(subscription)
     });
 
@@ -106,9 +123,15 @@ export default function MyPage() {
       return;
     }
 
+    const accessToken = await getAccessToken();
+    if (!accessToken) {
+      setPushState("idle");
+      return;
+    }
+
     await fetch("/api/push/subscribe", {
       method: "DELETE",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Authorization": `Bearer ${accessToken}`, "Content-Type": "application/json" },
       body: JSON.stringify({ endpoint: subscription.endpoint })
     });
     await subscription.unsubscribe();
