@@ -126,13 +126,19 @@ create policy "plant snoozes are private" on public.plant_snoozes
 create policy "push subscriptions are private" on public.push_subscriptions
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
-grant usage on schema public to authenticated;
+grant usage on schema public to authenticated, service_role;
 grant select, insert, update, delete on public.profiles to authenticated;
 grant select, insert, update, delete on public.plants to authenticated;
 grant select, insert, update, delete on public.watering_logs to authenticated;
 grant select, insert, update, delete on public.watering_log_photos to authenticated;
 grant select, insert, update, delete on public.plant_snoozes to authenticated;
 grant select, insert, update, delete on public.push_subscriptions to authenticated;
+grant select, insert, update, delete on public.profiles to service_role;
+grant select, insert, update, delete on public.plants to service_role;
+grant select, insert, update, delete on public.watering_logs to service_role;
+grant select, insert, update, delete on public.watering_log_photos to service_role;
+grant select, insert, update, delete on public.plant_snoozes to service_role;
+grant select, insert, update, delete on public.push_subscriptions to service_role;
 
 insert into storage.buckets (id, name, public)
 values ('plant-photos', 'plant-photos', true)

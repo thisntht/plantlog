@@ -36,6 +36,19 @@ export const dynamic = "force-dynamic";
 
 const DEFAULT_NOTIFICATION_WINDOW_MINUTES = 5;
 
+function getJwtRole(token: string) {
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) return null;
+
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const decoded = JSON.parse(Buffer.from(normalized, "base64").toString("utf8")) as { role?: string };
+    return decoded.role ?? null;
+  } catch {
+    return null;
+  }
+}
+
 function getKstParts() {
   const now = new Date();
   const formatter = new Intl.DateTimeFormat("en-CA", {
@@ -147,6 +160,10 @@ export async function GET(request: Request) {
 
   if (!vapidPublicKey || !vapidPrivateKey || !url || !serviceRoleKey) {
     return NextResponse.json({ error: "Missing notification environment variables" }, { status: 500 });
+  }
+
+  if (getJwtRole(serviceRoleKey) !== "service_role") {
+    return NextResponse.json({ error: "SUPABASE_SERVICE_ROLE_KEY must be a Supabase service_role key" }, { status: 500 });
   }
 
   webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
