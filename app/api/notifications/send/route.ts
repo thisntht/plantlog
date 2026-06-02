@@ -36,8 +36,8 @@ type NotificationStatus = "missing_time" | "invalid_time" | "already_sent" | "be
 
 export const dynamic = "force-dynamic";
 
-const DEFAULT_NOTIFICATION_WINDOW_MINUTES = 15;
-const MIN_NOTIFICATION_WINDOW_MINUTES = 15;
+const DEFAULT_NOTIFICATION_WINDOW_MINUTES = 30;
+const MIN_NOTIFICATION_WINDOW_MINUTES = 30;
 
 function getJwtRole(token: string) {
   try {
