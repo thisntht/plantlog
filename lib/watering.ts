@@ -87,11 +87,9 @@ export function buildMonthBuckets(monthDate: Date, plants: Plant[], logs: Wateri
 }
 
 export function getWateringIntervalSuggestion(plant: Plant, logs: WateringLog[]) {
-  const dates = getPlantLogs(plant.id, logs)
-    .filter((log) => log.logType === "watering")
-    .slice(0, 5)
-    .map((log) => log.wateredDate)
-    .sort();
+  const dates = Array.from(new Set(getPlantLogs(plant.id, logs).filter((log) => log.logType === "watering").map((log) => log.wateredDate)))
+    .sort()
+    .slice(-5);
 
   if (dates.length < 4) return null;
 
