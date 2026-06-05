@@ -108,7 +108,7 @@ export function MonthlyCalendar() {
             <span className="text-sm text-neutral-400">▼</span>
           </button>
         </div>
-        <p className="mt-1 text-sm leading-6 text-neutral-500">기록은 진하게, 예정된 물주기는 조용하게 표시됩니다.</p>
+        <p className="mt-1 text-sm leading-6 text-neutral-500">기록은 진하게, 예정된 물주기는 흐리게 표시됩니다.</p>
       </header>
 
       <section
