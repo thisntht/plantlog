@@ -29,6 +29,7 @@ export function MonthlyCalendar() {
   const [selected, setSelected] = useState<DateBucket | null>(null);
   const [selectedLog, setSelectedLog] = useState<WateringLog | null>(null);
   const [adding, setAdding] = useState(false);
+  const [addingPlantId, setAddingPlantId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState("");
   const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
   const [sheetTouchStart, setSheetTouchStart] = useState<{ x: number; y: number } | null>(null);
@@ -166,12 +167,19 @@ export function MonthlyCalendar() {
           bucket={selected}
           plants={plants}
           today={today}
-          onAdd={() => setAdding(true)}
+          onAdd={() => {
+            setAddingPlantId(null);
+            setAdding(true);
+          }}
           onClose={() => setSelected(null)}
           onMoveDate={moveSelectedDate}
           onSelectLog={(log) => {
             setSelectedLog(log);
             setSelected(null);
+          }}
+          onSelectScheduledPlant={(plantId) => {
+            setAddingPlantId(plantId);
+            setAdding(true);
           }}
           onTouchStart={(point) => setSheetTouchStart(point)}
           onTouchEnd={handleSheetSwipeEnd}
@@ -200,7 +208,16 @@ export function MonthlyCalendar() {
       ) : null}
 
       {selected && adding ? (
-        <WateringLogFormSheet plants={plants} selectedDate={selected.date} onClose={() => setAdding(false)} onSaved={handleLogSaved} />
+        <WateringLogFormSheet
+          plants={plants}
+          selectedPlantId={addingPlantId ?? undefined}
+          selectedDate={selected.date}
+          onClose={() => {
+            setAdding(false);
+            setAddingPlantId(null);
+          }}
+          onSaved={handleLogSaved}
+        />
       ) : null}
       {toastMessage ? <Toast message={toastMessage} /> : null}
     </>
@@ -248,6 +265,7 @@ function DateDetailSheet({
   onClose,
   onMoveDate,
   onSelectLog,
+  onSelectScheduledPlant,
   onTouchStart,
   onTouchEnd
 }: {
@@ -258,6 +276,7 @@ function DateDetailSheet({
   onClose: () => void;
   onMoveDate: (amount: number) => void;
   onSelectLog: (log: WateringLog) => void;
+  onSelectScheduledPlant: (plantId: string) => void;
   onTouchStart: (point: { x: number; y: number }) => void;
   onTouchEnd: (clientX: number, clientY: number) => void;
 }) {
@@ -300,9 +319,14 @@ function DateDetailSheet({
               <h3 className="mb-2 text-sm font-semibold text-neutral-800">예정된 물주기</h3>
               <div className="space-y-2">
                 {bucket.scheduledPlants.map((plant) => (
-                  <div className="rounded-lg bg-neutral-50 px-3 py-2 text-sm text-neutral-500" key={plant.id}>
+                  <button
+                    className="w-full rounded-lg bg-neutral-50 px-3 py-2 text-left text-sm font-medium text-neutral-600 transition hover:bg-neutral-100"
+                    key={plant.id}
+                    type="button"
+                    onClick={() => onSelectScheduledPlant(plant.id)}
+                  >
                     {plant.nickname}
-                  </div>
+                  </button>
                 ))}
                 {bucket.scheduledPlants.length === 0 ? <p className="py-8 text-center text-lg text-neutral-300">이날의 일정이 없습니다</p> : null}
               </div>
