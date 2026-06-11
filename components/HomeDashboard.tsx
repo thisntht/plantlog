@@ -17,8 +17,8 @@ export function HomeDashboard() {
   const { plants, wateringLogs, plantSnoozes, isDemo, snoozePlant: saveSnooze } = usePlantData();
   const today = todayISO();
   const todayPlants = getTodayPlants(plants, wateringLogs, plantSnoozes, today);
-  const upcoming = getUpcomingPlants(plants, wateringLogs, today);
-  const unchecked = getUncheckedPlants(plants, wateringLogs, today);
+  const upcoming = getUpcomingPlants(plants, wateringLogs, today, plantSnoozes);
+  const unchecked = getUncheckedPlants(plants, wateringLogs, today, plantSnoozes);
   const [addingPlant, setAddingPlant] = useState(false);
   const [formPlant, setFormPlant] = useState<Plant | null>(null);
   const [snoozePlant, setSnoozePlant] = useState<Plant | null>(null);
@@ -66,7 +66,7 @@ export function HomeDashboard() {
                 <PlantAvatar name={plant.nickname} imageUrl={plant.coverImageUrl} />
                 <div className="min-w-0 flex-1">
                   <h3 className="truncate font-medium text-neutral-900">{plant.nickname}</h3>
-                  <p className="text-sm text-neutral-500">예정일 {getNextWateringDate(plant, wateringLogs)}</p>
+                  <p className="text-sm text-neutral-500">예정일 {getNextWateringDate(plant, wateringLogs, plantSnoozes)}</p>
                 </div>
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2">
