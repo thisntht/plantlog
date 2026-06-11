@@ -24,7 +24,7 @@ const logTypeDotClass = {
 } as const;
 
 export function MonthlyCalendar() {
-  const { plants, wateringLogs } = usePlantData();
+  const { plants, wateringLogs, plantSnoozes } = usePlantData();
   const [month, setMonth] = useState(new Date());
   const [selected, setSelected] = useState<DateBucket | null>(null);
   const [selectedLog, setSelectedLog] = useState<WateringLog | null>(null);
@@ -35,7 +35,7 @@ export function MonthlyCalendar() {
   const [sheetTouchStart, setSheetTouchStart] = useState<{ x: number; y: number } | null>(null);
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
   const wheelLockRef = useRef<number | null>(null);
-  const buckets = useMemo(() => buildMonthBuckets(month, plants, wateringLogs), [month, plants, wateringLogs]);
+  const buckets = useMemo(() => buildMonthBuckets(month, plants, wateringLogs, plantSnoozes), [month, plants, plantSnoozes, wateringLogs]);
   const leading = buckets[0] ? getDay(new Date(`${buckets[0].date}T00:00:00`)) : 0;
   const trailing = (7 - ((leading + buckets.length) % 7)) % 7;
   const today = todayISO();
@@ -47,7 +47,7 @@ export function MonthlyCalendar() {
   const selectedLogPlant = selectedLog ? plants.find((plant) => plant.id === selectedLog.plantId) : null;
 
   const selectDate = (date: Date) => {
-    const targetBuckets = buildMonthBuckets(date, plants, wateringLogs);
+    const targetBuckets = buildMonthBuckets(date, plants, wateringLogs, plantSnoozes);
     const targetDate = dateToISO(date);
     setMonth(date);
     setSelected(targetBuckets.find((bucket) => bucket.date === targetDate) ?? null);
@@ -83,7 +83,7 @@ export function MonthlyCalendar() {
     if (!selected) return;
 
     const nextLogs = log ? [...wateringLogs.filter((item) => item.id !== log.id), log] : wateringLogs;
-    const nextBucket = buildMonthBuckets(new Date(`${selected.date}T00:00:00`), plants, nextLogs).find((bucket) => bucket.date === selected.date);
+    const nextBucket = buildMonthBuckets(new Date(`${selected.date}T00:00:00`), plants, nextLogs, plantSnoozes).find((bucket) => bucket.date === selected.date);
     setSelected(nextBucket ?? selected);
   };
   const handleSheetSwipeEnd = (clientX: number, clientY: number) => {

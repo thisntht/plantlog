@@ -1,4 +1,4 @@
-import { addDays, compareAsc, endOfMonth, format, isBefore, isSameDay, parseISO, startOfMonth } from "date-fns";
+import { addDays, compareAsc, endOfMonth, format, isBefore, startOfMonth } from "date-fns";
 import { addDaysISO, dateToISO, daysBetween, parseISODate } from "@/lib/date";
 import type { DateBucket, Plant, PlantSnooze, WateringLog } from "@/lib/types";
 
@@ -49,7 +49,7 @@ export function getPlantLogs(plantId: string, logs: WateringLog[]) {
   return logs.filter((log) => log.plantId === plantId).sort((a, b) => b.wateredDate.localeCompare(a.wateredDate));
 }
 
-export function buildMonthBuckets(monthDate: Date, plants: Plant[], logs: WateringLog[]): DateBucket[] {
+export function buildMonthBuckets(monthDate: Date, plants: Plant[], logs: WateringLog[], snoozes: PlantSnooze[] = []): DateBucket[] {
   const monthStart = startOfMonth(monthDate);
   const monthEnd = endOfMonth(monthDate);
   const buckets = new Map<string, DateBucket>();
@@ -66,11 +66,12 @@ export function buildMonthBuckets(monthDate: Date, plants: Plant[], logs: Wateri
 
   for (const plant of plants) {
     const anchor = getLastWateredDate(plant.id, logs) ?? plant.startedAt ?? plant.createdAt;
-    let next = parseISODate(anchor);
-    while (isBefore(next, monthStart)) {
-      next = addDays(next, plant.wateringIntervalDays);
+    const snooze = snoozes.find((item) => item.plantId === plant.id);
+    let next = addDays(parseISODate(anchor), plant.wateringIntervalDays);
+    if (snooze && dateToISO(next) <= snooze.snoozedUntil) {
+      next = parseISODate(snooze.snoozedUntil);
     }
-    if (isBefore(next, parseISO(anchor)) || isSameDay(next, parseISO(anchor))) {
+    while (isBefore(next, monthStart)) {
       next = addDays(next, plant.wateringIntervalDays);
     }
 
