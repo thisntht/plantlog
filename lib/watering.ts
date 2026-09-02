@@ -1,4 +1,4 @@
-import { addDays, compareAsc, endOfMonth, format, isBefore, isSameDay, parseISO, startOfMonth } from "date-fns";
+import { addDays, compareAsc, endOfMonth, format, isBefore, startOfMonth } from "date-fns";
 import { addDaysISO, dateToISO, daysBetween, parseISODate } from "@/lib/date";
 import type { DateBucket, Plant, PlantSnooze, WateringLog } from "@/lib/types";
 
@@ -10,9 +10,11 @@ export function getLastWateredDate(plantId: string, logs: WateringLog[]) {
   return plantLogs[0]?.wateredDate;
 }
 
-export function getNextWateringDate(plant: Plant, logs: WateringLog[]) {
+export function getNextWateringDate(plant: Plant, logs: WateringLog[], snoozes: PlantSnooze[] = []) {
   const baseDate = getLastWateredDate(plant.id, logs) ?? plant.startedAt ?? plant.createdAt;
-  return addDaysISO(baseDate, plant.wateringIntervalDays);
+  const nextDate = addDaysISO(baseDate, plant.wateringIntervalDays);
+  const snooze = snoozes.find((item) => item.plantId === plant.id);
+  return snooze && nextDate <= snooze.snoozedUntil ? snooze.snoozedUntil : nextDate;
 }
 
 export function isSnoozed(plant: Plant, snoozes: PlantSnooze[], today: string) {
@@ -22,24 +24,24 @@ export function isSnoozed(plant: Plant, snoozes: PlantSnooze[], today: string) {
 
 export function getTodayPlants(plants: Plant[], logs: WateringLog[], snoozes: PlantSnooze[], today: string) {
   return plants
-    .filter((plant) => getNextWateringDate(plant, logs) <= today)
+    .filter((plant) => getNextWateringDate(plant, logs, snoozes) <= today)
     .filter((plant) => !isSnoozed(plant, snoozes, today))
-    .sort((a, b) => getNextWateringDate(a, logs).localeCompare(getNextWateringDate(b, logs)));
+    .sort((a, b) => getNextWateringDate(a, logs, snoozes).localeCompare(getNextWateringDate(b, logs, snoozes)));
 }
 
-export function getUpcomingPlants(plants: Plant[], logs: WateringLog[], today: string) {
+export function getUpcomingPlants(plants: Plant[], logs: WateringLog[], today: string, snoozes: PlantSnooze[] = []) {
   return plants
-    .map((plant) => ({ plant, days: daysBetween(today, getNextWateringDate(plant, logs)) }))
+    .map((plant) => ({ plant, days: daysBetween(today, getNextWateringDate(plant, logs, snoozes)) }))
     .filter((item) => item.days >= 1 && item.days <= 2)
     .sort((a, b) => a.days - b.days);
 }
 
-export function getUncheckedPlants(plants: Plant[], logs: WateringLog[], today: string) {
+export function getUncheckedPlants(plants: Plant[], logs: WateringLog[], today: string, snoozes: PlantSnooze[] = []) {
   return plants
     .map((plant) => ({
       plant,
       daysSince: daysBetween(getLastWateredDate(plant.id, logs) ?? plant.startedAt, today),
-      daysOver: daysBetween(getNextWateringDate(plant, logs), today)
+      daysOver: daysBetween(getNextWateringDate(plant, logs, snoozes), today)
     }))
     .filter((item) => item.daysOver >= 3 || !getLastWateredDate(item.plant.id, logs))
     .sort((a, b) => b.daysOver - a.daysOver);
@@ -49,7 +51,7 @@ export function getPlantLogs(plantId: string, logs: WateringLog[]) {
   return logs.filter((log) => log.plantId === plantId).sort((a, b) => b.wateredDate.localeCompare(a.wateredDate));
 }
 
-export function buildMonthBuckets(monthDate: Date, plants: Plant[], logs: WateringLog[]): DateBucket[] {
+export function buildMonthBuckets(monthDate: Date, plants: Plant[], logs: WateringLog[], snoozes: PlantSnooze[] = []): DateBucket[] {
   const monthStart = startOfMonth(monthDate);
   const monthEnd = endOfMonth(monthDate);
   const buckets = new Map<string, DateBucket>();
@@ -66,11 +68,12 @@ export function buildMonthBuckets(monthDate: Date, plants: Plant[], logs: Wateri
 
   for (const plant of plants) {
     const anchor = getLastWateredDate(plant.id, logs) ?? plant.startedAt ?? plant.createdAt;
-    let next = parseISODate(anchor);
-    while (isBefore(next, monthStart)) {
-      next = addDays(next, plant.wateringIntervalDays);
+    const snooze = snoozes.find((item) => item.plantId === plant.id);
+    let next = addDays(parseISODate(anchor), plant.wateringIntervalDays);
+    if (snooze && dateToISO(next) <= snooze.snoozedUntil) {
+      next = parseISODate(snooze.snoozedUntil);
     }
-    if (isBefore(next, parseISO(anchor)) || isSameDay(next, parseISO(anchor))) {
+    while (isBefore(next, monthStart)) {
       next = addDays(next, plant.wateringIntervalDays);
     }
 
@@ -87,11 +90,9 @@ export function buildMonthBuckets(monthDate: Date, plants: Plant[], logs: Wateri
 }
 
 export function getWateringIntervalSuggestion(plant: Plant, logs: WateringLog[]) {
-  const dates = getPlantLogs(plant.id, logs)
-    .filter((log) => log.logType === "watering")
-    .slice(0, 5)
-    .map((log) => log.wateredDate)
-    .sort();
+  const dates = Array.from(new Set(getPlantLogs(plant.id, logs).filter((log) => log.logType === "watering").map((log) => log.wateredDate)))
+    .sort()
+    .slice(-5);
 
   if (dates.length < 4) return null;
 

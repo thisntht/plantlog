@@ -23,8 +23,8 @@ export function HomeDashboard() {
   const { plants, wateringLogs, plantSnoozes, isDemo, snoozePlant: saveSnooze, updatePlant } = usePlantData();
   const today = todayISO();
   const todayPlants = getTodayPlants(plants, wateringLogs, plantSnoozes, today);
-  const upcoming = getUpcomingPlants(plants, wateringLogs, today);
-  const unchecked = getUncheckedPlants(plants, wateringLogs, today);
+  const upcoming = getUpcomingPlants(plants, wateringLogs, today, plantSnoozes);
+  const unchecked = getUncheckedPlants(plants, wateringLogs, today, plantSnoozes);
   const intervalSuggestions = plants.flatMap((plant) => {
     const suggestion = getWateringIntervalSuggestion(plant, wateringLogs);
     return suggestion ? [{ plant, suggestion }] : [];
@@ -78,7 +78,7 @@ export function HomeDashboard() {
                 <PlantAvatar name={plant.nickname} imageUrl={plant.coverImageUrl} />
                 <div className="min-w-0 flex-1">
                   <h3 className="truncate font-medium text-neutral-900">{plant.nickname}</h3>
-                  <p className="text-sm text-neutral-500">예정일 {getNextWateringDate(plant, wateringLogs)}</p>
+                  <p className="text-sm text-neutral-500">예정일 {getNextWateringDate(plant, wateringLogs, plantSnoozes)}</p>
                 </div>
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2">
@@ -161,7 +161,7 @@ export function HomeDashboard() {
         <SectionTitle icon={<CalendarClock className="h-4 w-4" />} title="곧 물줄 식물" />
         <div className="space-y-2">
           {upcoming.map(({ plant, days }) => (
-            <CompactPlantRow key={plant.id} plant={plant} meta={days === 1 ? "내일" : "2일 뒤"} />
+            <CompactPlantRow key={plant.id} plant={plant} meta={days === 1 ? "내일" : "2일 뒤"} onSelect={() => setFormPlant(plant)} />
           ))}
           {upcoming.length === 0 ? <EmptyState text="1~2일 안에 예정된 식물이 없어요." /> : null}
         </div>
@@ -171,7 +171,7 @@ export function HomeDashboard() {
         <SectionTitle icon={<Leaf className="h-4 w-4" />} title="오래 확인하지 않은 식물" />
         <div className="space-y-2">
           {unchecked.map(({ plant, daysSince }) => (
-            <CompactPlantRow key={plant.id} plant={plant} meta={`${daysSince}일`} />
+            <CompactPlantRow key={plant.id} plant={plant} meta={`${daysSince}일`} onSelect={() => setFormPlant(plant)} />
           ))}
           {unchecked.length === 0 ? <EmptyState text="최근 기록 흐름이 차분히 이어지고 있어요." /> : null}
         </div>
@@ -222,13 +222,13 @@ function SectionTitle({ icon, title }: { icon: ReactNode; title: string }) {
   );
 }
 
-function CompactPlantRow({ plant, meta }: { plant: Plant; meta: string }) {
+function CompactPlantRow({ plant, meta, onSelect }: { plant: Plant; meta: string; onSelect: () => void }) {
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-white p-3">
+    <button className="flex w-full items-center gap-3 rounded-lg border border-neutral-200 bg-white p-3 text-left transition hover:bg-neutral-50" type="button" onClick={onSelect}>
       <PlantAvatar name={plant.nickname} imageUrl={plant.coverImageUrl} size="sm" />
       <span className="min-w-0 flex-1 truncate text-sm font-medium text-neutral-900">{plant.nickname}</span>
       <span className="text-sm text-neutral-500">{meta}</span>
-    </div>
+    </button>
   );
 }
 

@@ -24,17 +24,18 @@ const logTypeDotClass = {
 } as const;
 
 export function MonthlyCalendar() {
-  const { plants, wateringLogs } = usePlantData();
+  const { plants, wateringLogs, plantSnoozes } = usePlantData();
   const [month, setMonth] = useState(new Date());
   const [selected, setSelected] = useState<DateBucket | null>(null);
   const [selectedLog, setSelectedLog] = useState<WateringLog | null>(null);
   const [adding, setAdding] = useState(false);
+  const [addingPlantId, setAddingPlantId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState("");
   const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
   const [sheetTouchStart, setSheetTouchStart] = useState<{ x: number; y: number } | null>(null);
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
   const wheelLockRef = useRef<number | null>(null);
-  const buckets = useMemo(() => buildMonthBuckets(month, plants, wateringLogs), [month, plants, wateringLogs]);
+  const buckets = useMemo(() => buildMonthBuckets(month, plants, wateringLogs, plantSnoozes), [month, plants, plantSnoozes, wateringLogs]);
   const leading = buckets[0] ? getDay(new Date(`${buckets[0].date}T00:00:00`)) : 0;
   const trailing = (7 - ((leading + buckets.length) % 7)) % 7;
   const today = todayISO();
@@ -46,7 +47,7 @@ export function MonthlyCalendar() {
   const selectedLogPlant = selectedLog ? plants.find((plant) => plant.id === selectedLog.plantId) : null;
 
   const selectDate = (date: Date) => {
-    const targetBuckets = buildMonthBuckets(date, plants, wateringLogs);
+    const targetBuckets = buildMonthBuckets(date, plants, wateringLogs, plantSnoozes);
     const targetDate = dateToISO(date);
     setMonth(date);
     setSelected(targetBuckets.find((bucket) => bucket.date === targetDate) ?? null);
@@ -82,7 +83,7 @@ export function MonthlyCalendar() {
     if (!selected) return;
 
     const nextLogs = log ? [...wateringLogs.filter((item) => item.id !== log.id), log] : wateringLogs;
-    const nextBucket = buildMonthBuckets(new Date(`${selected.date}T00:00:00`), plants, nextLogs).find((bucket) => bucket.date === selected.date);
+    const nextBucket = buildMonthBuckets(new Date(`${selected.date}T00:00:00`), plants, nextLogs, plantSnoozes).find((bucket) => bucket.date === selected.date);
     setSelected(nextBucket ?? selected);
   };
   const handleSheetSwipeEnd = (clientX: number, clientY: number) => {
@@ -108,7 +109,7 @@ export function MonthlyCalendar() {
             <span className="text-sm text-neutral-400">▼</span>
           </button>
         </div>
-        <p className="mt-1 text-sm leading-6 text-neutral-500">기록은 진하게, 예정된 물주기는 조용하게 표시됩니다.</p>
+        <p className="mt-1 text-sm leading-6 text-neutral-500">기록은 진하게, 예정된 물주기는 흐리게 표시됩니다.</p>
       </header>
 
       <section
@@ -166,12 +167,19 @@ export function MonthlyCalendar() {
           bucket={selected}
           plants={plants}
           today={today}
-          onAdd={() => setAdding(true)}
+          onAdd={() => {
+            setAddingPlantId(null);
+            setAdding(true);
+          }}
           onClose={() => setSelected(null)}
           onMoveDate={moveSelectedDate}
           onSelectLog={(log) => {
             setSelectedLog(log);
             setSelected(null);
+          }}
+          onSelectScheduledPlant={(plantId) => {
+            setAddingPlantId(plantId);
+            setAdding(true);
           }}
           onTouchStart={(point) => setSheetTouchStart(point)}
           onTouchEnd={handleSheetSwipeEnd}
@@ -200,7 +208,16 @@ export function MonthlyCalendar() {
       ) : null}
 
       {selected && adding ? (
-        <WateringLogFormSheet plants={plants} selectedDate={selected.date} onClose={() => setAdding(false)} onSaved={handleLogSaved} />
+        <WateringLogFormSheet
+          plants={plants}
+          selectedPlantId={addingPlantId ?? undefined}
+          selectedDate={selected.date}
+          onClose={() => {
+            setAdding(false);
+            setAddingPlantId(null);
+          }}
+          onSaved={handleLogSaved}
+        />
       ) : null}
       {toastMessage ? <Toast message={toastMessage} /> : null}
     </>
@@ -248,6 +265,7 @@ function DateDetailSheet({
   onClose,
   onMoveDate,
   onSelectLog,
+  onSelectScheduledPlant,
   onTouchStart,
   onTouchEnd
 }: {
@@ -258,6 +276,7 @@ function DateDetailSheet({
   onClose: () => void;
   onMoveDate: (amount: number) => void;
   onSelectLog: (log: WateringLog) => void;
+  onSelectScheduledPlant: (plantId: string) => void;
   onTouchStart: (point: { x: number; y: number }) => void;
   onTouchEnd: (clientX: number, clientY: number) => void;
 }) {
@@ -300,9 +319,14 @@ function DateDetailSheet({
               <h3 className="mb-2 text-sm font-semibold text-neutral-800">예정된 물주기</h3>
               <div className="space-y-2">
                 {bucket.scheduledPlants.map((plant) => (
-                  <div className="rounded-lg bg-neutral-50 px-3 py-2 text-sm text-neutral-500" key={plant.id}>
+                  <button
+                    className="w-full rounded-lg bg-neutral-50 px-3 py-2 text-left text-sm font-medium text-neutral-600 transition hover:bg-neutral-100"
+                    key={plant.id}
+                    type="button"
+                    onClick={() => onSelectScheduledPlant(plant.id)}
+                  >
                     {plant.nickname}
-                  </div>
+                  </button>
                 ))}
                 {bucket.scheduledPlants.length === 0 ? <p className="py-8 text-center text-lg text-neutral-300">이날의 일정이 없습니다</p> : null}
               </div>

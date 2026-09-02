@@ -32,9 +32,12 @@ type PushSubscriptionRow = {
   subscription: webpush.PushSubscription;
 };
 
+type NotificationStatus = "missing_time" | "invalid_time" | "already_sent" | "before_window" | "after_window" | "due";
+
 export const dynamic = "force-dynamic";
 
-const DEFAULT_NOTIFICATION_WINDOW_MINUTES = 5;
+const DEFAULT_NOTIFICATION_WINDOW_MINUTES = 30;
+const MIN_NOTIFICATION_WINDOW_MINUTES = 30;
 
 function getJwtRole(token: string) {
   try {
@@ -71,7 +74,7 @@ function getKstParts() {
 function getNotificationWindowMinutes() {
   const value = Number(process.env.NOTIFICATION_WINDOW_MINUTES);
   if (!Number.isFinite(value) || value < 1) return DEFAULT_NOTIFICATION_WINDOW_MINUTES;
-  return Math.min(Math.floor(value), 60);
+  return Math.min(Math.max(Math.floor(value), MIN_NOTIFICATION_WINDOW_MINUTES), 60);
 }
 
 function timeToMinutes(value: string) {
@@ -80,14 +83,17 @@ function timeToMinutes(value: string) {
   return hour * 60 + minute;
 }
 
-function isNotificationDue(profile: ProfileRow, nowMinutes: number, today: string, windowMinutes: number) {
-  if (!profile.notification_time || profile.last_notification_sent_on === today) return false;
+function getNotificationStatus(profile: ProfileRow, nowMinutes: number, today: string, windowMinutes: number): NotificationStatus {
+  if (!profile.notification_time) return "missing_time";
+  if (profile.last_notification_sent_on === today) return "already_sent";
 
   const targetMinutes = timeToMinutes(profile.notification_time);
-  if (targetMinutes === null) return false;
+  if (targetMinutes === null) return "invalid_time";
 
-  const elapsedMinutes = (nowMinutes - targetMinutes + 24 * 60) % (24 * 60);
-  return elapsedMinutes <= windowMinutes;
+  const elapsedMinutes = nowMinutes - targetMinutes;
+  if (elapsedMinutes < 0) return "before_window";
+  if (elapsedMinutes > windowMinutes) return "after_window";
+  return "due";
 }
 
 function addDaysISO(date: string, days: number) {
@@ -147,6 +153,8 @@ async function sendPushNotifications(userId: string, dueCount: number) {
 }
 
 export async function GET(request: Request) {
+  const requestUrl = new URL(request.url);
+  const dryRun = requestUrl.searchParams.get("dryRun") === "1";
   const cronSecret = process.env.CRON_SECRET;
   if (cronSecret && request.headers.get("authorization") !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -169,17 +177,30 @@ export async function GET(request: Request) {
   webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
 
   const supabase = createClient(url, serviceRoleKey);
-  const { date, minutes } = getKstParts();
+  const { date, time, minutes } = getKstParts();
   const notificationWindowMinutes = getNotificationWindowMinutes();
   const { data: profiles, error: profilesError } = await supabase.from("profiles").select("id, notification_time, last_notification_sent_on");
   if (profilesError) {
     return NextResponse.json({ error: profilesError.message }, { status: 500 });
   }
 
-  const targetProfiles = ((profiles ?? []) as ProfileRow[]).filter((profile) => isNotificationDue(profile, minutes, date, notificationWindowMinutes));
+  const profileRows = (profiles ?? []) as ProfileRow[];
+  const statusCounts: Record<NotificationStatus, number> = {
+    missing_time: 0,
+    invalid_time: 0,
+    already_sent: 0,
+    before_window: 0,
+    after_window: 0,
+    due: 0
+  };
+  const targetProfiles = profileRows.filter((profile) => {
+    const status = getNotificationStatus(profile, minutes, date, notificationWindowMinutes);
+    statusCounts[status] += 1;
+    return status === "due";
+  });
 
   let sent = 0;
-  for (const profile of targetProfiles) {
+  for (const profile of dryRun ? [] : targetProfiles) {
     const [plantsResult, logsResult, snoozesResult] = await Promise.all([
       supabase.from("plants").select("id, nickname, watering_interval_days, started_at, created_at").eq("user_id", profile.id),
       supabase.from("watering_logs").select("plant_id, watered_date, log_type").eq("user_id", profile.id),
@@ -187,8 +208,6 @@ export async function GET(request: Request) {
     ]);
 
     const duePlants = getDuePlants((plantsResult.data ?? []) as PlantRow[], (logsResult.data ?? []) as LogRow[], (snoozesResult.data ?? []) as SnoozeRow[], date);
-    if (duePlants.length === 0) continue;
-
     const sentForProfile = await sendPushNotifications(profile.id, duePlants.length);
     sent += sentForProfile;
 
@@ -197,5 +216,5 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.json({ ok: true, checked: targetProfiles.length, sent, windowMinutes: notificationWindowMinutes });
+  return NextResponse.json({ ok: true, dryRun, profiles: profileRows.length, checked: targetProfiles.length, sent, date, time, windowMinutes: notificationWindowMinutes, statusCounts });
 }

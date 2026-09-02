@@ -1,18 +1,33 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Bell, Lock, UserRound } from "lucide-react";
+import { Bell, UserRound } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { BottomSheet } from "@/components/BottomSheet";
 import { PageHeader } from "@/components/PageHeader";
 import { usePlantData } from "@/components/AppProviders";
 import { urlBase64ToUint8Array } from "@/lib/push";
 import { profile } from "@/lib/sample-data";
-import { createClient } from "@/lib/supabase/client";
+import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 const PUSH_ENABLED_STORAGE_KEY = "plantlog:push-enabled";
+
+function withTimeout<T>(promise: Promise<T>, milliseconds: number, message: string) {
+  return Promise.race<T>([
+    promise,
+    new Promise<T>((_, reject) => {
+      window.setTimeout(() => reject(new Error(message)), milliseconds);
+    })
+  ]);
+}
+
+function delay(milliseconds: number) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, milliseconds);
+  });
+}
 
 export default function MyPage() {
   const { user, signOut, isDemo, notificationTime, updateNotificationTime } = usePlantData();
@@ -73,8 +88,38 @@ export default function MyPage() {
     };
   }, [user]);
 
+  const getReadyRegistration = async () => {
+    try {
+      const registration = await withTimeout(navigator.serviceWorker.ready, 5000, "serviceWorker.ready timeout");
+      return registration;
+    } catch (error) {
+      console.error("Service worker ready failed. Retrying registration.", error);
+      const registration = await navigator.serviceWorker.register("/sw.js");
+      return registration;
+    }
+  };
+
+  const getCurrentSession = async (supabase: SupabaseClient) => {
+    let lastErrorMessage = "";
+
+    const maxAttempts = 10;
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      const {
+        data: { session },
+        error
+      } = await supabase.auth.getSession();
+      if (session?.access_token) return session;
+
+      lastErrorMessage = error?.message ?? "";
+      await delay(300);
+    }
+
+    if (lastErrorMessage) console.error("Failed to get Supabase session", lastErrorMessage);
+    return null;
+  };
+
   const getPushSubscription = async (publicKey: string) => {
-    let registration = await navigator.serviceWorker.ready;
+    let registration = await getReadyRegistration();
     const existing = await registration.pushManager.getSubscription();
     if (existing) return existing;
 
@@ -129,22 +174,30 @@ export default function MyPage() {
       return;
     }
 
-    const supabase = createClient();
-    const { error: deleteError } = await supabase.from("push_subscriptions").delete().eq("endpoint", subscription.endpoint);
-    if (deleteError) {
-      console.error("Failed to clear push subscription", deleteError);
+    const supabase = createBrowserSupabaseClient();
+    if (!supabase) {
       setPushState("idle");
-      showToast("푸시 알림을 저장하지 못했어요.");
+      showToast("Supabase 설정을 확인하지 못했어요.");
+      return;
+    }
+    const session = await getCurrentSession(supabase);
+    if (!session) {
+      setPushState("idle");
+      showToast("로그인 세션을 확인하지 못했어요.");
       return;
     }
 
-    const { error: insertError } = await supabase.from("push_subscriptions").insert({
-      user_id: user.id,
-      endpoint: subscription.endpoint,
-      subscription
+    const saveResponse = await fetch("/api/push/subscribe", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(subscription)
     });
-    if (insertError) {
-      console.error("Failed to save push subscription", insertError);
+    const saveResult = await saveResponse.json().catch(() => null);
+    if (!saveResponse.ok) {
+      console.error("Failed to save push subscription", saveResult);
       setPushState("idle");
       showToast("푸시 알림을 저장하지 못했어요.");
       return;
@@ -168,9 +221,23 @@ export default function MyPage() {
       return;
     }
 
-    const supabase = createClient();
-    const { error } = await supabase.from("push_subscriptions").delete().eq("user_id", user.id).eq("endpoint", subscription.endpoint);
-    if (error) console.error("Failed to delete push subscription", error);
+    const supabase = createBrowserSupabaseClient();
+    if (!supabase) {
+      showToast("푸시 알림이 꺼졌어요.");
+      return;
+    }
+    const session = await getCurrentSession(supabase);
+    if (session?.access_token) {
+      const response = await fetch("/api/push/subscribe", {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ endpoint: subscription.endpoint })
+      });
+      if (!response.ok) console.error("Failed to delete push subscription", await response.json().catch(() => null));
+    }
 
     showToast("푸시 알림이 꺼졌어요.");
   };
@@ -197,31 +264,33 @@ export default function MyPage() {
           </Link>
         </div>
       ) : null}
-      <section className="mt-4 space-y-2">
-        <button className="flex w-full items-center gap-3 rounded-lg border border-neutral-200 bg-white p-4 text-left" type="button" onClick={() => setTimeSheetOpen(true)}>
-          <span className="text-neutral-500">
-            <Bell className="h-4 w-4" />
-          </span>
-          <span className="flex-1 text-sm font-medium text-neutral-800">알림 시간</span>
-          <span className="font-mono text-sm text-neutral-500">{notificationTime}</span>
-        </button>
-        {user ? (
-          <button
-            className="flex w-full items-center gap-3 rounded-lg border border-neutral-200 bg-white p-4 text-left"
-            type="button"
-            onClick={() => (pushState === "enabled" ? void disablePush() : void enablePush())}
-          >
+      {user ? (
+        <section className="mt-4 space-y-2">
+          <button className="flex w-full items-center gap-3 rounded-lg border border-neutral-200 bg-white p-4 text-left" type="button" onClick={() => setTimeSheetOpen(true)}>
             <span className="text-neutral-500">
               <Bell className="h-4 w-4" />
             </span>
-            <span className="flex-1 text-sm font-medium text-neutral-800">푸시 알림</span>
-            <span className="text-sm text-neutral-500">
-              {pushState === "saving" ? "설정 중" : pushState === "enabled" ? "켜짐" : pushState === "blocked" ? "차단됨" : "꺼짐"}
-            </span>
+            <span className="flex-1 text-sm font-medium text-neutral-800">알림 시간</span>
+            <span className="font-mono text-sm text-neutral-500">{notificationTime}</span>
           </button>
-        ) : null}
-        <SettingRow icon={<Lock className="h-4 w-4" />} label="공개 여부" value={profile.isPublic ? "공개" : "비공개"} />
-      </section>
+          <div className="rounded-lg border border-neutral-200 bg-white">
+            <button
+              className="flex w-full items-center gap-3 p-4 text-left disabled:opacity-60"
+              type="button"
+              disabled={pushState === "saving"}
+              onClick={() => (pushState === "enabled" ? void disablePush() : void enablePush())}
+            >
+              <span className="text-neutral-500">
+                <Bell className="h-4 w-4" />
+              </span>
+              <span className="flex-1 text-sm font-medium text-neutral-800">푸시 알림</span>
+              <span className="text-sm text-neutral-500">
+                {pushState === "saving" ? "설정 중" : pushState === "enabled" ? "켜짐" : pushState === "blocked" ? "차단됨" : "꺼짐"}
+              </span>
+            </button>
+          </div>
+        </section>
+      ) : null}
       {user ? (
         <button className="mt-4 h-12 w-full rounded-lg bg-neutral-900 text-sm font-semibold text-white" type="button" onClick={() => setLogoutConfirmOpen(true)}>
           로그아웃
@@ -315,16 +384,6 @@ function TimeColumn({
           ))}
         </div>
       </div>
-    </div>
-  );
-}
-
-function SettingRow({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
-  return (
-    <div className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-white p-4">
-      <span className="text-neutral-500">{icon}</span>
-      <span className="flex-1 text-sm font-medium text-neutral-800">{label}</span>
-      <span className="text-sm text-neutral-500">{value}</span>
     </div>
   );
 }

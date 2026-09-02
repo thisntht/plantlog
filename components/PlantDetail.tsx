@@ -36,6 +36,8 @@ export function PlantDetail({ plant }: { plant: Plant }) {
   const [adding, setAdding] = useState(false);
   const [editingPlant, setEditingPlant] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [dismissedSuggestionKey, setDismissedSuggestionKey] = useState<string | null>(null);
+  const [applyingSuggestion, setApplyingSuggestion] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const foundPlant = plants.find((item) => item.id === plant.id);
   const activePlant = foundPlant ?? plant;
@@ -43,6 +45,8 @@ export function PlantDetail({ plant }: { plant: Plant }) {
   const filteredLogs = logFilter ? logs.filter((log) => log.logType === logFilter) : logs;
   const lastWatered = getLastWateredDate(activePlant.id, wateringLogs);
   const suggestion = getWateringIntervalSuggestion(activePlant, wateringLogs);
+  const suggestionKey = suggestion ? `${activePlant.id}:${suggestion.current}:${suggestion.average}:${suggestion.gaps.join(",")}` : null;
+  const visibleSuggestion = suggestion && suggestionKey !== dismissedSuggestionKey ? suggestion : null;
   const showToast = (message: string) => {
     setToastMessage(message);
     window.setTimeout(() => setToastMessage(""), 1400);
@@ -50,6 +54,19 @@ export function PlantDetail({ plant }: { plant: Plant }) {
   const removePlant = async () => {
     await deletePlant(activePlant.id);
     router.push("/plants?toast=deleted");
+  };
+  const applySuggestion = async () => {
+    if (!visibleSuggestion) return;
+
+    setApplyingSuggestion(true);
+    try {
+      await updatePlant(activePlant.id, { wateringIntervalDays: visibleSuggestion.average });
+      showToast("물주기 주기를 변경했어요.");
+    } catch {
+      showToast("주기를 변경하지 못했어요.");
+    } finally {
+      setApplyingSuggestion(false);
+    }
   };
 
   if (loading && !foundPlant) {
@@ -103,21 +120,26 @@ export function PlantDetail({ plant }: { plant: Plant }) {
         </button>
       </section>
 
-      {suggestion ? (
+      {visibleSuggestion ? (
         <section className="mb-5 rounded-lg border border-neutral-200 bg-white p-4">
           <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-neutral-900">
             <Settings2 aria-hidden className="h-4 w-4" />
             주기 제안
           </div>
           <p className="text-sm leading-6 text-neutral-700">
-            최근 기록을 보면 평균 {suggestion.average}일마다 물을 주고 있어요. 현재 설정은 {suggestion.current}일이에요.
+            최근 기록을 보면 평균 {visibleSuggestion.average}일마다 물을 주고 있어요. 현재 설정은 {visibleSuggestion.current}일이에요. {visibleSuggestion.average}일로
+            바꿔볼까요?
           </p>
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <button className="h-10 rounded-md border border-neutral-200 bg-white text-sm font-medium text-neutral-700" type="button">
+            <button
+              className="h-10 rounded-md border border-neutral-200 bg-white text-sm font-medium text-neutral-700"
+              type="button"
+              onClick={() => suggestionKey && setDismissedSuggestionKey(suggestionKey)}
+            >
               그대로 둘게요
             </button>
-            <button className="h-10 rounded-md bg-neutral-900 text-sm font-semibold text-white" type="button">
-              {suggestion.average}일로 변경
+            <button className="h-10 rounded-md bg-neutral-900 text-sm font-semibold text-white disabled:opacity-60" type="button" disabled={applyingSuggestion} onClick={() => void applySuggestion()}>
+              {applyingSuggestion ? "변경 중" : `${visibleSuggestion.average}일로 변경`}
             </button>
           </div>
         </section>

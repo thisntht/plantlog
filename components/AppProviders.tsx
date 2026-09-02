@@ -293,15 +293,14 @@ export function AppProviders({ children }: { children: ReactNode }) {
     async (plantId: string, input: UpdatePlantInput) => {
       if (!supabase || !user) return;
 
-      const payload = {
-        nickname: input.nickname,
-        scientific_name: input.scientificName ?? null,
-        plant_type: input.plantType ?? null,
-        watering_interval_days: input.wateringIntervalDays,
-        started_at: input.startedAt,
-        memo: input.memo ?? null,
-        cover_image_url: input.coverImageUrl
-      };
+      const payload: Record<string, string | number | null> = {};
+      if ("nickname" in input) payload.nickname = input.nickname ?? null;
+      if ("scientificName" in input) payload.scientific_name = input.scientificName || null;
+      if ("plantType" in input) payload.plant_type = input.plantType || null;
+      if ("wateringIntervalDays" in input) payload.watering_interval_days = input.wateringIntervalDays ?? null;
+      if ("startedAt" in input) payload.started_at = input.startedAt ?? null;
+      if ("memo" in input) payload.memo = input.memo || null;
+      if ("coverImageUrl" in input) payload.cover_image_url = input.coverImageUrl ?? null;
 
       const { error } = await supabase.from("plants").update(payload).eq("id", plantId).eq("user_id", user.id);
       if (error) throw error;

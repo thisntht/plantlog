@@ -20,15 +20,15 @@ export function PlantList() {
   const [adding, setAdding] = useState(false);
   const [selectedPlantId, setSelectedPlantId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState("");
-  const { plants, wateringLogs, isDemo } = usePlantData();
+  const { plants, wateringLogs, plantSnoozes, isDemo } = usePlantData();
   const today = todayISO();
   const selectedPlant = selectedPlantId ? plants.find((plant) => plant.id === selectedPlantId) : null;
   const sortedPlants = useMemo(() => {
     return [...plants].sort((a, b) => {
       if (sort === "name") return a.nickname.localeCompare(b.nickname, "ko");
-      return getNextWateringDate(a, wateringLogs).localeCompare(getNextWateringDate(b, wateringLogs));
+      return getNextWateringDate(a, wateringLogs, plantSnoozes).localeCompare(getNextWateringDate(b, wateringLogs, plantSnoozes));
     });
-  }, [plants, sort, wateringLogs]);
+  }, [plantSnoozes, plants, sort, wateringLogs]);
   const showToast = (message: string) => {
     setToastMessage(message);
     window.setTimeout(() => setToastMessage(""), 1400);
@@ -96,7 +96,7 @@ export function PlantList() {
 
       <div className="space-y-2">
         {sortedPlants.map((plant) => {
-          const nextDate = getNextWateringDate(plant, wateringLogs);
+          const nextDate = getNextWateringDate(plant, wateringLogs, plantSnoozes);
           return (
             <button
               className="flex w-full items-center gap-3 rounded-lg border border-neutral-200 bg-white p-3 text-left transition hover:bg-neutral-50"
