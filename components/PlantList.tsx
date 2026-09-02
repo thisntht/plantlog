@@ -47,6 +47,11 @@ export function PlantList() {
     return () => window.removeEventListener("plantlog:plants-tab", closeDetail);
   }, []);
 
+  useEffect(() => {
+    if (!selectedPlantId) return;
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [selectedPlantId]);
+
   if (selectedPlant) {
     return (
       <>

@@ -3,26 +3,38 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
 import Link from "next/link";
-import { CalendarClock, Droplets, Eye, Leaf, Plus } from "lucide-react";
+import { CalendarClock, Droplets, Eye, Leaf, Plus, Settings2 } from "lucide-react";
 import { BottomSheet } from "@/components/BottomSheet";
 import { usePlantData } from "@/components/AppProviders";
 import { PlantAvatar } from "@/components/PlantAvatar";
 import { PlantForm } from "@/components/PlantForm";
 import { WateringLogFormSheet } from "@/components/WateringLogFormSheet";
 import { todayISO } from "@/lib/date";
-import { getNextWateringDate, getTodayPlants, getUncheckedPlants, getUpcomingPlants } from "@/lib/watering";
+import {
+  getNextWateringDate,
+  getTodayPlants,
+  getUncheckedPlants,
+  getUpcomingPlants,
+  getWateringIntervalSuggestion
+} from "@/lib/watering";
 import type { Plant } from "@/lib/types";
 
 export function HomeDashboard() {
-  const { plants, wateringLogs, plantSnoozes, isDemo, snoozePlant: saveSnooze } = usePlantData();
+  const { plants, wateringLogs, plantSnoozes, isDemo, snoozePlant: saveSnooze, updatePlant } = usePlantData();
   const today = todayISO();
   const todayPlants = getTodayPlants(plants, wateringLogs, plantSnoozes, today);
   const upcoming = getUpcomingPlants(plants, wateringLogs, today);
   const unchecked = getUncheckedPlants(plants, wateringLogs, today);
+  const intervalSuggestions = plants.flatMap((plant) => {
+    const suggestion = getWateringIntervalSuggestion(plant, wateringLogs);
+    return suggestion ? [{ plant, suggestion }] : [];
+  });
   const [addingPlant, setAddingPlant] = useState(false);
   const [formPlant, setFormPlant] = useState<Plant | null>(null);
   const [snoozePlant, setSnoozePlant] = useState<Plant | null>(null);
   const [showSavedToast, setShowSavedToast] = useState(false);
+  const [dismissedSuggestions, setDismissedSuggestions] = useState<string[]>([]);
+  const [updatingSuggestion, setUpdatingSuggestion] = useState<string | null>(null);
 
   const showSaved = () => {
     setShowSavedToast(true);
@@ -92,6 +104,58 @@ export function HomeDashboard() {
           {todayPlants.length === 0 ? <EmptyState text="오늘은 정해진 물주기가 없어요. 가볍게 둘러봐도 충분해요." /> : null}
         </div>
       </section>
+
+      {intervalSuggestions
+        .filter(({ plant }) => !dismissedSuggestions.includes(plant.id))
+        .map(({ plant, suggestion }) => (
+          <section className="mb-6 rounded-lg border border-dashed border-neutral-300 bg-white p-4" key={plant.id}>
+            <div className="mb-3 flex items-center gap-3">
+              <PlantAvatar name={plant.nickname} imageUrl={plant.coverImageUrl} size="sm" />
+              <span className="min-w-0 flex-1 truncate text-sm font-medium text-neutral-900">{plant.nickname}</span>
+            </div>
+            <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-neutral-900">
+              <Settings2 aria-hidden className="h-4 w-4" />
+              주기 제안
+            </div>
+            <p className="text-sm leading-6 text-neutral-700">
+              최근 기록을 보면 평균 {suggestion.average}일마다 물을 주고 있어요. 현재 설정은 {suggestion.current}일이에요.
+            </p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button
+                className="h-10 rounded-md border border-neutral-200 bg-white text-sm font-medium text-neutral-700"
+                type="button"
+                onClick={() => setDismissedSuggestions((current) => [...current, plant.id])}
+              >
+                그대로 둘게요
+              </button>
+              <button
+                className="h-10 rounded-md bg-neutral-900 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                type="button"
+                disabled={updatingSuggestion === plant.id}
+                onClick={async () => {
+                  setUpdatingSuggestion(plant.id);
+                  try {
+                    await updatePlant(plant.id, {
+                      nickname: plant.nickname,
+                      wateringIntervalDays: suggestion.average,
+                      scientificName: plant.scientificName,
+                      plantType: plant.plantType,
+                      startedAt: plant.startedAt,
+                      memo: plant.memo,
+                      coverImageUrl: plant.coverImageUrl
+                    });
+                    setDismissedSuggestions((current) => [...current, plant.id]);
+                    showSaved();
+                  } finally {
+                    setUpdatingSuggestion(null);
+                  }
+                }}
+              >
+                {updatingSuggestion === plant.id ? "변경 중..." : `${suggestion.average}일로 변경`}
+              </button>
+            </div>
+          </section>
+        ))}
 
       <section className="mb-6">
         <SectionTitle icon={<CalendarClock className="h-4 w-4" />} title="곧 물줄 식물" />
