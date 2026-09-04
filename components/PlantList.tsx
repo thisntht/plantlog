@@ -2,12 +2,20 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowDownUp, ChevronLeft, Plus } from "lucide-react";
+import { ArrowDownUp, Plus } from "lucide-react";
 import { BottomSheet } from "@/components/BottomSheet";
 import { PlantDetail } from "@/components/PlantDetail";
 import { PlantForm } from "@/components/PlantForm";
 import { usePlantData } from "@/components/AppProviders";
 import { PlantAvatar } from "@/components/PlantAvatar";
+import {
+  Breadcrumb,
+  BreadcrumbButton,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator
+} from "@/components/ui/breadcrumb";
 import { todayISO } from "@/lib/date";
 import { getNextWateringDate } from "@/lib/watering";
 
@@ -55,15 +63,17 @@ export function PlantList() {
   if (selectedPlant) {
     return (
       <>
-        <button
-          className="mb-4 inline-flex h-9 items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 text-sm font-medium text-neutral-700"
-          type="button"
-          onClick={() => setSelectedPlantId(null)}
-          aria-label="식물 목록으로 돌아가기"
-        >
-          <ChevronLeft aria-hidden className="h-4 w-4" />
-          목록
-        </button>
+        <Breadcrumb className="mb-4">
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbButton onClick={() => setSelectedPlantId(null)}>식물 목록</BreadcrumbButton>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{selectedPlant.nickname}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
         <PlantDetail plant={selectedPlant} />
       </>
     );
