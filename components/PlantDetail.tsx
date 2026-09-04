@@ -10,7 +10,7 @@ import { PlantAvatar } from "@/components/PlantAvatar";
 import { WateringLogDetailSheet } from "@/components/WateringLogDetailSheet";
 import { WateringLogFormSheet } from "@/components/WateringLogFormSheet";
 import { badgeVariants } from "@/components/ui/badge";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { dateToISO, formatKoreanDate, todayISO } from "@/lib/date";
 import { getLastWateredDate, getPlantLogs, getWateringIntervalSuggestion } from "@/lib/watering";
@@ -106,24 +106,22 @@ export function PlantDetail({ plant }: { plant: Plant }) {
           </div>
           <div className="mt-3 flex h-24 items-stretch gap-3">
             <PlantAvatar name={activePlant.nickname} imageUrl={activePlant.coverImageUrl} size="lg" />
-            <div className="grid h-24 min-w-0 flex-1 grid-cols-2 grid-rows-2 gap-2 text-sm">
+            <div className="grid h-24 min-w-0 flex-1 grid-cols-[4.5rem_minmax(0,1fr)] grid-rows-2 gap-2 text-sm">
               <InfoPill className="col-span-2" label="카테고리" value={activePlant.plantType ?? activePlant.scientificName ?? "식물"} />
               <InfoPill label="주기" value={`${activePlant.wateringIntervalDays}일`} />
               <InfoPill label="최근" value={lastWatered ? formatKoreanDate(lastWatered) : "없음"} />
             </div>
           </div>
           {activePlant.memo ? <p className="mt-4 text-sm leading-6 text-neutral-500">{activePlant.memo}</p> : null}
+          <button
+            className="mt-4 flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-neutral-900 text-sm font-semibold text-white transition-colors hover:bg-neutral-800"
+            type="button"
+            onClick={() => setAdding(true)}
+          >
+            <Droplets aria-hidden className="h-4 w-4" />
+            기록 추가
+          </button>
         </CardContent>
-        <CardFooter className="px-4 pb-4 pt-0">
-        <button
-          className="flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-neutral-900 text-sm font-semibold text-white transition-colors hover:bg-neutral-800"
-          type="button"
-          onClick={() => setAdding(true)}
-        >
-          <Droplets aria-hidden className="h-4 w-4" />
-          기록 추가
-        </button>
-        </CardFooter>
       </Card>
 
       {visibleSuggestion ? (
