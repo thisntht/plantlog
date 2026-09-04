@@ -41,7 +41,7 @@ export function TabsList({ className, onKeyDown, ...props }: ComponentProps<"div
   return (
     <div
       role="tablist"
-      className={clsx("inline-flex h-10 items-center rounded-md bg-neutral-100 p-1 text-neutral-500", className)}
+      className={clsx("inline-flex h-10 items-center rounded-xl bg-neutral-100 p-1 text-neutral-500", className)}
       onKeyDown={handleKeyDown}
       {...props}
     />
@@ -61,7 +61,7 @@ export function TabsTrigger({ value, className, onClick, ...props }: ComponentPr
       data-state={active ? "active" : "inactive"}
       tabIndex={active ? 0 : -1}
       className={clsx(
-        "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+        "inline-flex items-center justify-center whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
         active ? "bg-white text-neutral-950 shadow-sm" : "hover:text-neutral-900",
         className
       )}
