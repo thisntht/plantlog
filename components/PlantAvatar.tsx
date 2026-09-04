@@ -2,9 +2,9 @@ import { Sprout } from "lucide-react";
 
 export function PlantAvatar({ name, imageUrl, size = "md" }: { name: string; imageUrl?: string; size?: "sm" | "md" | "lg" }) {
   const sizeClass = {
-    sm: "h-10 w-10",
-    md: "h-12 w-12",
-    lg: "h-24 w-24"
+    sm: "h-10 w-10 shrink-0",
+    md: "h-12 w-12 shrink-0",
+    lg: "h-24 w-24 shrink-0"
   }[size];
 
   if (imageUrl) {

@@ -82,10 +82,10 @@ export function PlantDetail({ plant }: { plant: Plant }) {
   return (
     <>
       <Card className="mb-5 overflow-hidden">
-        <CardContent className="p-4">
+        <CardContent className="p-4 pt-4">
           <div className="flex items-start gap-4">
-          <PlantAvatar name={activePlant.nickname} imageUrl={activePlant.coverImageUrl} size="lg" />
-          <div className="min-w-0 flex-1">
+            <PlantAvatar name={activePlant.nickname} imageUrl={activePlant.coverImageUrl} size="lg" />
+          <div className="flex h-24 min-w-0 flex-1 flex-col">
             <div className="flex min-w-0 items-start justify-between gap-2">
               <div className="min-w-0 pt-0.5">
                 <h1 className="truncate text-xl font-semibold leading-7 text-neutral-900">{activePlant.nickname}</h1>
@@ -110,7 +110,7 @@ export function PlantDetail({ plant }: { plant: Plant }) {
                 </button>
               </div>
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+            <div className="mt-auto grid grid-cols-2 gap-2 text-sm">
               <InfoPill label="주기" value={`${activePlant.wateringIntervalDays}일`} />
               <InfoPill label="최근" value={lastWatered ? formatKoreanDate(lastWatered) : "없음"} />
             </div>
@@ -120,7 +120,7 @@ export function PlantDetail({ plant }: { plant: Plant }) {
         </CardContent>
         <CardFooter className="px-4 pb-4 pt-0">
         <button
-          className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-neutral-900 text-sm font-semibold text-white transition-colors hover:bg-neutral-800"
+          className="flex h-9 w-full items-center justify-center gap-2 rounded-md bg-neutral-900 text-sm font-semibold text-white transition-colors hover:bg-neutral-800"
           type="button"
           onClick={() => setAdding(true)}
         >
@@ -394,9 +394,9 @@ function Toast({ message }: { message: string }) {
 
 function InfoPill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-neutral-50 p-2">
-      <p className="text-[0.68rem] text-neutral-400">{label}</p>
-      <p className="mt-0.5 truncate text-sm font-medium text-neutral-800">{value}</p>
+    <div className="flex h-10 min-w-0 flex-col justify-center rounded-lg bg-neutral-50 px-2.5">
+      <p className="text-[0.65rem] leading-3 text-neutral-400">{label}</p>
+      <p className="truncate text-sm font-medium leading-5 text-neutral-800">{value}</p>
     </div>
   );
 }
