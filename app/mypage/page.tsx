@@ -6,6 +6,7 @@ import { AppShell } from "@/components/AppShell";
 import { BottomSheet, useBodyScrollLock } from "@/components/BottomSheet";
 import { PageHeader } from "@/components/PageHeader";
 import { usePlantData } from "@/components/AppProviders";
+import { Card, CardContent } from "@/components/ui/card";
 import { urlBase64ToUint8Array } from "@/lib/push";
 import { profile } from "@/lib/sample-data";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
@@ -411,19 +412,22 @@ function ConfirmOverlay({
   useBodyScrollLock();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/25 px-5 backdrop-blur-sm" role="dialog" aria-modal="true">
-      <div className="w-full max-w-sm rounded-lg border border-neutral-200 bg-white p-4 shadow-[0_12px_35px_rgba(0,0,0,0.08)]">
-        <h3 className="text-base font-semibold text-neutral-900">{title}</h3>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/35 px-5 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="logout-dialog-title">
+      <button className="absolute inset-0 cursor-default" type="button" aria-label="로그아웃 창 닫기" onClick={onCancel} />
+      <Card className="relative z-10 w-full max-w-sm rounded-xl shadow-[0_20px_60px_rgba(0,0,0,0.16)]">
+        <CardContent className="p-5 pt-5">
+        <h3 className="text-xl font-semibold text-neutral-900" id="logout-dialog-title">{title}</h3>
         <p className="mt-2 text-sm leading-6 text-neutral-500">{description}</p>
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          <button className="h-10 rounded-md border border-neutral-200 text-sm font-medium text-neutral-700" type="button" onClick={onCancel}>
+        <div className="mt-5 grid grid-cols-2 gap-2">
+          <button className="h-11 rounded-lg border border-neutral-200 bg-white text-sm font-medium text-neutral-700" type="button" onClick={onCancel}>
             취소
           </button>
-          <button className="h-10 rounded-md border border-red-100 bg-white text-sm font-semibold text-red-500" type="button" onClick={onConfirm}>
+          <button className="h-11 rounded-lg bg-neutral-900 text-sm font-semibold text-white" type="button" onClick={onConfirm}>
             {confirmLabel}
           </button>
         </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

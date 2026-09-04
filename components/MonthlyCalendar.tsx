@@ -126,7 +126,7 @@ export function MonthlyCalendar() {
         }}
         onWheel={(event) => handleWheel(event.deltaX, event.deltaY)}
       >
-        <div className="grid grid-cols-7 border-y border-neutral-200 text-center text-[0.72rem] font-medium text-neutral-400">
+        <div className="grid grid-cols-7 border-b border-neutral-200 text-center text-[0.72rem] font-medium text-neutral-400">
           {weekdays.map((day) => (
             <div className="py-2" key={day}>
               {day}
