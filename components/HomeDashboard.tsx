@@ -2,7 +2,6 @@
 
 import type { ReactNode } from "react";
 import { useState } from "react";
-import Link from "next/link";
 import { CalendarClock, Droplets, Eye, Leaf, Plus, Settings2 } from "lucide-react";
 import { BottomSheet } from "@/components/BottomSheet";
 import { usePlantData } from "@/components/AppProviders";
@@ -20,7 +19,7 @@ import {
 import type { Plant } from "@/lib/types";
 
 export function HomeDashboard() {
-  const { plants, wateringLogs, plantSnoozes, isDemo, snoozePlant: saveSnooze, updatePlant } = usePlantData();
+  const { plants, wateringLogs, plantSnoozes, isDemo, openLogin, snoozePlant: saveSnooze, updatePlant } = usePlantData();
   const today = todayISO();
   const todayPlants = getTodayPlants(plants, wateringLogs, plantSnoozes, today);
   const upcoming = getUpcomingPlants(plants, wateringLogs, today, plantSnoozes);
@@ -45,7 +44,7 @@ export function HomeDashboard() {
     <>
       <div className="mb-3 flex justify-end">
         <button
-          className="inline-flex h-9 items-center gap-1.5 rounded-md border border-neutral-200 bg-white px-3 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
+          className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-3 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
           type="button"
           onClick={() => setAddingPlant(true)}
         >
@@ -65,9 +64,9 @@ export function HomeDashboard() {
         </div>
         {isDemo ? (
           <p className="mb-3 rounded-lg bg-neutral-50 px-3 py-2 text-sm text-neutral-500">
-            <Link className="font-medium text-neutral-900 underline underline-offset-4" href="/login">
+            <button className="font-medium text-neutral-900 underline underline-offset-4" type="button" onClick={openLogin}>
               로그인
-            </Link>
+            </button>
             하면 내 식물 데이터가 저장되고 기기 간 동기화됩니다.
           </p>
         ) : null}

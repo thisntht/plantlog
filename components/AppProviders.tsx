@@ -3,6 +3,7 @@
 import type { User } from "@supabase/supabase-js";
 import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { LoginDialog } from "@/components/LoginDialog";
 import { plants as samplePlants, plantSnoozes as sampleSnoozes, wateringLogs as sampleLogs } from "@/lib/sample-data";
 import { createBrowserSupabaseClient, getAppUrl, hasSupabaseConfig } from "@/lib/supabase/browser";
 import { mapPlant, mapPlantSnooze, mapWateringLog } from "@/lib/supabase/mappers";
@@ -63,6 +64,7 @@ type PlantDataContextValue = {
   deleteWateringLog: (logId: string) => Promise<void>;
   snoozePlant: (plantId: string, days: number) => Promise<void>;
   updateNotificationTime: (time: string) => Promise<void>;
+  openLogin: () => void;
 };
 
 const PlantDataContext = createContext<PlantDataContextValue | null>(null);
@@ -75,6 +77,8 @@ export function AppProviders({ children }: { children: ReactNode }) {
   const [wateringLogs, setWateringLogs] = useState<WateringLog[]>([]);
   const [plantSnoozes, setPlantSnoozes] = useState<PlantSnooze[]>([]);
   const [notificationTime, setNotificationTime] = useState("20:00");
+  const [loginOpen, setLoginOpen] = useState(false);
+  const openLogin = useCallback(() => setLoginOpen(true), []);
   const isDemo = !loading && (!hasSupabaseConfig() || !user);
 
   const refresh = useCallback(async () => {
@@ -428,7 +432,8 @@ export function AppProviders({ children }: { children: ReactNode }) {
       updateWateringLog,
       deleteWateringLog,
       snoozePlant,
-      updateNotificationTime
+      updateNotificationTime,
+      openLogin
     }),
     [
       addPlant,
@@ -438,6 +443,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
       isDemo,
       loading,
       notificationTime,
+      openLogin,
       plantSnoozes,
       plants,
       refresh,
@@ -454,7 +460,12 @@ export function AppProviders({ children }: { children: ReactNode }) {
     ]
   );
 
-  return <PlantDataContext.Provider value={value}>{children}</PlantDataContext.Provider>;
+  return (
+    <PlantDataContext.Provider value={value}>
+      {children}
+      {loginOpen ? <LoginDialog onClose={() => setLoginOpen(false)} /> : null}
+    </PlantDataContext.Provider>
+  );
 }
 
 export function usePlantData() {

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { Bell, UserRound } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { BottomSheet, useBodyScrollLock } from "@/components/BottomSheet";
@@ -30,7 +29,7 @@ function delay(milliseconds: number) {
 }
 
 export default function MyPage() {
-  const { user, signOut, isDemo, notificationTime, updateNotificationTime } = usePlantData();
+  const { user, signOut, isDemo, notificationTime, openLogin, updateNotificationTime } = usePlantData();
   const [selectedHour, selectedMinute] = notificationTime.split(":");
   const [timeSheetOpen, setTimeSheetOpen] = useState(false);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
@@ -259,9 +258,9 @@ export default function MyPage() {
       {isDemo ? (
         <div className="mt-4 rounded-lg border border-neutral-200 bg-white p-4">
           <p className="text-sm leading-6 text-neutral-500">로그인하면 식물과 물주기 기록이 저장됩니다.</p>
-          <Link className="mt-3 flex h-11 items-center justify-center rounded-md bg-neutral-900 text-sm font-semibold text-white" href="/login">
+          <button className="mt-3 flex h-11 w-full items-center justify-center rounded-md bg-neutral-900 text-sm font-semibold text-white" type="button" onClick={openLogin}>
             로그인
-          </Link>
+          </button>
         </div>
       ) : null}
       {user ? (

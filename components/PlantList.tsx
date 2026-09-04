@@ -29,7 +29,7 @@ export function PlantList() {
   const [adding, setAdding] = useState(false);
   const [selectedPlantId, setSelectedPlantId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState("");
-  const { plants, wateringLogs, plantSnoozes, isDemo } = usePlantData();
+  const { plants, wateringLogs, plantSnoozes, isDemo, openLogin } = usePlantData();
   const today = todayISO();
   const selectedPlant = selectedPlantId ? plants.find((plant) => plant.id === selectedPlantId) : null;
   const sortedPlants = useMemo(() => {
@@ -84,9 +84,9 @@ export function PlantList() {
     <>
       {isDemo ? (
         <p className="mb-4 rounded-lg border border-neutral-200 bg-white p-4 text-sm leading-6 text-neutral-500">
-          <a className="font-medium text-neutral-900 underline underline-offset-4" href="/login">
+          <button className="font-medium text-neutral-900 underline underline-offset-4" type="button" onClick={openLogin}>
             로그인
-          </a>
+          </button>
           전에는 샘플 식물 목록이 보입니다. 로그인 후 추가한 식물은 저장됩니다.
         </p>
       ) : null}

@@ -25,7 +25,7 @@ export function BottomTabNav() {
             <Link
               className={clsx(
                 "flex h-14 flex-col items-center justify-center gap-1 rounded-md text-[0.72rem] font-medium transition",
-                active ? "bg-neutral-100 text-neutral-950" : "text-neutral-500 hover:bg-neutral-50"
+                active ? "text-neutral-950" : "text-neutral-500 hover:bg-neutral-50"
               )}
               href={tab.href}
               key={tab.href}

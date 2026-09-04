@@ -9,7 +9,7 @@ import type { Plant } from "@/lib/types";
 
 export function PlantForm({ onSaved, variant = "page" }: { onSaved?: (plant: Plant | null) => void; variant?: "page" | "sheet" }) {
   const router = useRouter();
-  const { addPlant, isDemo, user, uploadPlantCover } = usePlantData();
+  const { addPlant, isDemo, openLogin, user, uploadPlantCover } = usePlantData();
   const [nickname, setNickname] = useState("");
   const [wateringIntervalDays, setWateringIntervalDays] = useState("");
   const [scientificName, setScientificName] = useState("");
@@ -39,7 +39,7 @@ export function PlantForm({ onSaved, variant = "page" }: { onSaved?: (plant: Pla
     }
 
     if (!user) {
-      router.push("/login");
+      openLogin();
       return;
     }
 
