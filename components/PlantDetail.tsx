@@ -153,12 +153,12 @@ export function PlantDetail({ plant }: { plant: Plant }) {
         </TabsList>
       </Tabs>
 
-      <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
+      <div className="mb-4 flex gap-1.5 overflow-x-auto pb-1">
         {logTypeOrder.map((type) => {
           const active = logFilter === type;
           return (
             <button
-              className={`shrink-0 rounded-full border px-4 py-2 text-sm font-medium transition ${
+              className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-medium leading-4 transition ${
                 active ? "border-neutral-900 bg-neutral-900 text-white" : "border-neutral-200 bg-white text-neutral-600"
               }`}
               key={type}
