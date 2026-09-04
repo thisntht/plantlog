@@ -116,7 +116,7 @@ export function PlantDetail({ plant }: { plant: Plant }) {
         </CardContent>
         <CardFooter className="px-4 pb-4 pt-0">
         <button
-          className="flex h-9 w-full items-center justify-center gap-2 rounded-md bg-neutral-900 text-sm font-semibold text-white transition-colors hover:bg-neutral-800"
+          className="flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-neutral-900 text-sm font-semibold text-white transition-colors hover:bg-neutral-800"
           type="button"
           onClick={() => setAdding(true)}
         >
