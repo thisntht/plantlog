@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { addMonths, endOfMonth, format, getDay, startOfMonth } from "date-fns";
 import { CalendarDays, ChevronLeft, ChevronRight, Droplets, Edit3, ImageIcon, List, Settings2, Trash2, X } from "lucide-react";
 import { usePlantData } from "@/components/AppProviders";
-import { BottomSheet } from "@/components/BottomSheet";
+import { BottomSheet, useBodyScrollLock } from "@/components/BottomSheet";
 import { PlantAvatar } from "@/components/PlantAvatar";
 import { WateringLogDetailSheet } from "@/components/WateringLogDetailSheet";
 import { WateringLogFormSheet } from "@/components/WateringLogFormSheet";
@@ -360,6 +360,8 @@ function ConfirmOverlay({
   onCancel: () => void;
   onConfirm: () => void;
 }) {
+  useBodyScrollLock();
+
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-neutral-950/25 px-5">
       <div className="w-full max-w-sm rounded-lg border border-neutral-200 bg-white p-4 shadow-[0_12px_35px_rgba(0,0,0,0.08)]">

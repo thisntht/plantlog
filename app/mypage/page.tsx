@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Bell, UserRound } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { BottomSheet } from "@/components/BottomSheet";
+import { BottomSheet, useBodyScrollLock } from "@/components/BottomSheet";
 import { PageHeader } from "@/components/PageHeader";
 import { usePlantData } from "@/components/AppProviders";
 import { urlBase64ToUint8Array } from "@/lib/push";
@@ -409,6 +409,8 @@ function ConfirmOverlay({
   onCancel: () => void;
   onConfirm: () => void;
 }) {
+  useBodyScrollLock();
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/25 px-5 backdrop-blur-sm" role="dialog" aria-modal="true">
       <div className="w-full max-w-sm rounded-lg border border-neutral-200 bg-white p-4 shadow-[0_12px_35px_rgba(0,0,0,0.08)]">

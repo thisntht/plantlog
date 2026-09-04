@@ -246,24 +246,20 @@ function SavedToast() {
 
 function SnoozeSheet({ plant, onClose, onSnooze }: { plant: Plant; onClose: () => void; onSnooze: (days: number) => Promise<void> }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-neutral-950/25 px-3" role="dialog" aria-modal="true">
-      <button className="absolute inset-0 cursor-default" aria-label="닫기" onClick={onClose} />
-      <section className="safe-bottom relative mx-auto w-full max-w-md rounded-t-lg border border-neutral-200 bg-white px-5 pt-5">
-        <h2 className="text-lg font-semibold text-neutral-900">{plant.nickname}</h2>
-        <p className="mt-2 text-sm leading-6 text-neutral-500">물주기 기록은 만들지 않고 홈 표시와 알림만 잠시 미룹니다.</p>
-        <div className="mt-5 grid grid-cols-3 gap-2">
-          {[1, 2, 3].map((day) => (
-            <button
-              className="h-12 rounded-md border border-neutral-200 bg-white text-sm font-semibold text-neutral-800"
-              key={day}
-              type="button"
-              onClick={() => void onSnooze(day)}
-            >
-              {day}일 뒤
-            </button>
-          ))}
-        </div>
-      </section>
-    </div>
+    <BottomSheet title={plant.nickname} onClose={onClose}>
+      <p className="text-sm leading-6 text-neutral-500">물주기 기록은 만들지 않고 홈 표시와 알림만 잠시 미룹니다.</p>
+      <div className="mt-5 grid grid-cols-3 gap-2">
+        {[1, 2, 3].map((day) => (
+          <button
+            className="h-12 rounded-md border border-neutral-200 bg-white text-sm font-semibold text-neutral-800"
+            key={day}
+            type="button"
+            onClick={() => void onSnooze(day)}
+          >
+            {day}일 뒤
+          </button>
+        ))}
+      </div>
+    </BottomSheet>
   );
 }

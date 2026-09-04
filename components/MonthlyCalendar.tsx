@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { addDays, addMonths, format, getDay } from "date-fns";
 import { ChevronRight, Plus } from "lucide-react";
 import { usePlantData } from "@/components/AppProviders";
-import { BottomSheet } from "@/components/BottomSheet";
+import { BottomSheet, useBodyScrollLock } from "@/components/BottomSheet";
 import { WateringLogDetailSheet } from "@/components/WateringLogDetailSheet";
 import { WateringLogFormSheet } from "@/components/WateringLogFormSheet";
 import { dateToISO, todayISO } from "@/lib/date";
@@ -90,7 +90,9 @@ export function MonthlyCalendar() {
     if (!sheetTouchStart) return;
     const distanceX = clientX - sheetTouchStart.x;
     const distanceY = clientY - sheetTouchStart.y;
-    if (Math.abs(distanceX) > 56 && Math.abs(distanceX) > Math.abs(distanceY) * 1.5) {
+    if (distanceY > 72 && distanceY > Math.abs(distanceX) * 1.25) {
+      setSelected(null);
+    } else if (Math.abs(distanceX) > 56 && Math.abs(distanceX) > Math.abs(distanceY) * 1.5) {
       moveSelectedDate(distanceX < 0 ? 1 : -1);
     }
     setSheetTouchStart(null);
@@ -282,24 +284,27 @@ function DateDetailSheet({
 }) {
   const date = new Date(`${bucket.date}T00:00:00`);
   const isToday = bucket.date === today;
+  useBodyScrollLock();
 
   return (
     <div
       className="fixed inset-0 z-50 touch-none overflow-hidden bg-neutral-950/35 px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-16 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
-      onTouchStart={(event) => {
-        const touch = event.touches[0];
-        onTouchStart({ x: touch?.clientX ?? 0, y: touch?.clientY ?? 0 });
-      }}
-      onTouchEnd={(event) => {
-        const touch = event.changedTouches[0];
-        onTouchEnd(touch?.clientX ?? 0, touch?.clientY ?? 0);
-      }}
     >
       <button className="absolute inset-0 cursor-default" aria-label="닫기" onClick={onClose} />
       <div className="relative z-10 mx-auto flex h-full max-w-md flex-col">
-        <div className="mb-5 text-white">
+        <div
+          className="mb-5 text-white"
+          onTouchStart={(event) => {
+            const touch = event.touches[0];
+            onTouchStart({ x: touch?.clientX ?? 0, y: touch?.clientY ?? 0 });
+          }}
+          onTouchEnd={(event) => {
+            const touch = event.changedTouches[0];
+            onTouchEnd(touch?.clientX ?? 0, touch?.clientY ?? 0);
+          }}
+        >
           <div className="h-6">{isToday ? <p className="text-sm font-bold uppercase tracking-wide">TODAY</p> : null}</div>
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-end gap-2">
