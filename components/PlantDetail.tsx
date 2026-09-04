@@ -9,6 +9,7 @@ import { BottomSheet } from "@/components/BottomSheet";
 import { PlantAvatar } from "@/components/PlantAvatar";
 import { WateringLogDetailSheet } from "@/components/WateringLogDetailSheet";
 import { WateringLogFormSheet } from "@/components/WateringLogFormSheet";
+import { badgeVariants } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { dateToISO, formatKoreanDate, todayISO } from "@/lib/date";
 import { getLastWateredDate, getPlantLogs, getWateringIntervalSuggestion } from "@/lib/watering";
@@ -153,16 +154,15 @@ export function PlantDetail({ plant }: { plant: Plant }) {
         </TabsList>
       </Tabs>
 
-      <div className="mb-4 flex gap-1.5 overflow-x-auto pb-1">
+      <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
         {logTypeOrder.map((type) => {
           const active = logFilter === type;
           return (
             <button
-              className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-medium leading-4 transition ${
-                active ? "border-neutral-900 bg-neutral-900 text-white" : "border-neutral-200 bg-white text-neutral-600"
-              }`}
+              className={badgeVariants({ variant: active ? "default" : "outline", className: "shrink-0 cursor-pointer" })}
               key={type}
               type="button"
+              aria-pressed={active}
               onClick={() => setLogFilter((current) => (current === type ? null : type))}
             >
               {logTypeLabels[type]}

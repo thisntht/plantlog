@@ -98,7 +98,7 @@ export function PlantList() {
           </TabsList>
         </Tabs>
         <button
-          className="flex h-10 w-10 items-center justify-center rounded-md bg-neutral-900 text-white"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-neutral-900 text-white"
           type="button"
           onClick={() => setAdding(true)}
           aria-label="식물 추가"
