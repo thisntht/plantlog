@@ -10,6 +10,7 @@ import { PlantAvatar } from "@/components/PlantAvatar";
 import { WateringLogDetailSheet } from "@/components/WateringLogDetailSheet";
 import { WateringLogFormSheet } from "@/components/WateringLogFormSheet";
 import { badgeVariants } from "@/components/ui/badge";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { dateToISO, formatKoreanDate, todayISO } from "@/lib/date";
 import { getLastWateredDate, getPlantLogs, getWateringIntervalSuggestion } from "@/lib/watering";
@@ -80,46 +81,54 @@ export function PlantDetail({ plant }: { plant: Plant }) {
 
   return (
     <>
-      <section className="mb-5 rounded-lg border border-neutral-200 bg-white p-4">
-        <div className="mb-3 flex justify-end gap-1">
-          <button
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100"
-            type="button"
-            aria-label="식물 수정"
-            onClick={() => setEditingPlant(true)}
-          >
-            <Edit3 aria-hidden className="h-4 w-4" />
-          </button>
-          <button
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-red-500 hover:bg-red-50"
-            type="button"
-            aria-label="식물 삭제"
-            onClick={() => setDeleteConfirmOpen(true)}
-          >
-            <Trash2 aria-hidden className="h-4 w-4" />
-          </button>
-        </div>
-        <div className="flex gap-4">
+      <Card className="mb-5 overflow-hidden">
+        <CardContent className="p-4">
+          <div className="flex items-start gap-4">
           <PlantAvatar name={activePlant.nickname} imageUrl={activePlant.coverImageUrl} size="lg" />
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-2xl font-semibold text-neutral-900">{activePlant.nickname}</h1>
-            <p className="mt-1 truncate text-sm text-neutral-500">{activePlant.scientificName ?? activePlant.plantType ?? "식물"}</p>
-            <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+            <div className="flex min-w-0 items-start justify-between gap-2">
+              <div className="min-w-0 pt-0.5">
+                <h1 className="truncate text-xl font-semibold leading-7 text-neutral-900">{activePlant.nickname}</h1>
+                <p className="mt-0.5 truncate text-sm text-neutral-500">{activePlant.scientificName ?? activePlant.plantType ?? "식물"}</p>
+              </div>
+              <div className="flex shrink-0 gap-1">
+                <button
+                  className="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-neutral-100"
+                  type="button"
+                  aria-label="식물 수정"
+                  onClick={() => setEditingPlant(true)}
+                >
+                  <Edit3 aria-hidden className="h-4 w-4" />
+                </button>
+                <button
+                  className="flex h-9 w-9 items-center justify-center rounded-lg text-red-500 transition-colors hover:bg-red-50"
+                  type="button"
+                  aria-label="식물 삭제"
+                  onClick={() => setDeleteConfirmOpen(true)}
+                >
+                  <Trash2 aria-hidden className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
               <InfoPill label="주기" value={`${activePlant.wateringIntervalDays}일`} />
               <InfoPill label="최근" value={lastWatered ? formatKoreanDate(lastWatered) : "없음"} />
             </div>
           </div>
-        </div>
-        <p className="mt-4 text-sm leading-6 text-neutral-500">{activePlant.memo}</p>
+          </div>
+          {activePlant.memo ? <p className="mt-4 text-sm leading-6 text-neutral-500">{activePlant.memo}</p> : null}
+        </CardContent>
+        <CardFooter className="px-4 pb-4 pt-0">
         <button
-          className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-md bg-neutral-900 text-sm font-semibold text-white"
+          className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-neutral-900 text-sm font-semibold text-white transition-colors hover:bg-neutral-800"
           type="button"
           onClick={() => setAdding(true)}
         >
           <Droplets aria-hidden className="h-4 w-4" />
           기록 추가
         </button>
-      </section>
+        </CardFooter>
+      </Card>
 
       {visibleSuggestion ? (
         <section className="mb-5 rounded-lg border border-neutral-200 bg-white p-4">
