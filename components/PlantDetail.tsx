@@ -83,38 +83,34 @@ export function PlantDetail({ plant }: { plant: Plant }) {
     <>
       <Card className="mb-5 overflow-hidden">
         <CardContent className="p-4 pt-4">
-          <div className="flex items-start gap-4">
-            <PlantAvatar name={activePlant.nickname} imageUrl={activePlant.coverImageUrl} size="lg" />
-          <div className="flex h-24 min-w-0 flex-1 flex-col">
-            <div className="flex min-w-0 items-start justify-between gap-2">
-              <div className="min-w-0 pt-0.5">
-                <h1 className="truncate text-xl font-semibold leading-7 text-neutral-900">{activePlant.nickname}</h1>
-                <p className="mt-0.5 truncate text-sm text-neutral-500">{activePlant.scientificName ?? activePlant.plantType ?? "식물"}</p>
-              </div>
-              <div className="flex shrink-0 gap-1">
-                <button
-                  className="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-neutral-100"
-                  type="button"
-                  aria-label="식물 수정"
-                  onClick={() => setEditingPlant(true)}
-                >
-                  <Edit3 aria-hidden className="h-4 w-4" />
-                </button>
-                <button
-                  className="flex h-9 w-9 items-center justify-center rounded-lg text-red-500 transition-colors hover:bg-red-50"
-                  type="button"
-                  aria-label="식물 삭제"
-                  onClick={() => setDeleteConfirmOpen(true)}
-                >
-                  <Trash2 aria-hidden className="h-4 w-4" />
-                </button>
-              </div>
+          <div className="flex min-w-0 items-center justify-between gap-3">
+            <h1 className="min-w-0 flex-1 truncate text-left text-xl font-semibold leading-7 text-neutral-900">{activePlant.nickname}</h1>
+            <div className="flex shrink-0 gap-1">
+              <button
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-neutral-100"
+                type="button"
+                aria-label="식물 수정"
+                onClick={() => setEditingPlant(true)}
+              >
+                <Edit3 aria-hidden className="h-4 w-4" />
+              </button>
+              <button
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-red-500 transition-colors hover:bg-red-50"
+                type="button"
+                aria-label="식물 삭제"
+                onClick={() => setDeleteConfirmOpen(true)}
+              >
+                <Trash2 aria-hidden className="h-4 w-4" />
+              </button>
             </div>
-            <div className="mt-auto grid grid-cols-2 gap-2 text-sm">
+          </div>
+          <div className="mt-3 flex h-24 items-stretch gap-3">
+            <PlantAvatar name={activePlant.nickname} imageUrl={activePlant.coverImageUrl} size="lg" />
+            <div className="grid h-24 min-w-0 flex-1 grid-cols-2 grid-rows-2 gap-2 text-sm">
+              <InfoPill className="col-span-2" label="카테고리" value={activePlant.plantType ?? activePlant.scientificName ?? "식물"} />
               <InfoPill label="주기" value={`${activePlant.wateringIntervalDays}일`} />
               <InfoPill label="최근" value={lastWatered ? formatKoreanDate(lastWatered) : "없음"} />
             </div>
-          </div>
           </div>
           {activePlant.memo ? <p className="mt-4 text-sm leading-6 text-neutral-500">{activePlant.memo}</p> : null}
         </CardContent>
@@ -392,9 +388,9 @@ function Toast({ message }: { message: string }) {
   );
 }
 
-function InfoPill({ label, value }: { label: string; value: string }) {
+function InfoPill({ className = "", label, value }: { className?: string; label: string; value: string }) {
   return (
-    <div className="flex h-10 min-w-0 flex-col justify-center rounded-lg bg-neutral-50 px-2.5">
+    <div className={`flex min-h-0 min-w-0 flex-col justify-center rounded-lg bg-neutral-50 px-2.5 ${className}`}>
       <p className="text-[0.65rem] leading-3 text-neutral-400">{label}</p>
       <p className="truncate text-sm font-medium leading-5 text-neutral-800">{value}</p>
     </div>
