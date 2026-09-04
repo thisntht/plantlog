@@ -16,6 +16,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator
 } from "@/components/ui/breadcrumb";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { todayISO } from "@/lib/date";
 import { getNextWateringDate } from "@/lib/watering";
 
@@ -90,10 +91,12 @@ export function PlantList() {
         </p>
       ) : null}
       <div className="mb-4 flex items-center justify-between gap-3">
-        <div className="inline-flex rounded-md border border-neutral-200 bg-white p-1">
-          <SortButton active={sort === "needs"} onClick={() => setSort("needs")} label="관리 필요순" />
-          <SortButton active={sort === "name"} onClick={() => setSort("name")} label="가나다순" />
-        </div>
+        <Tabs value={sort} onValueChange={(value) => setSort(value as SortMode)}>
+          <TabsList aria-label="식물 정렬 방식">
+            <TabsTrigger value="needs">관리 필요순</TabsTrigger>
+            <TabsTrigger value="name">가나다순</TabsTrigger>
+          </TabsList>
+        </Tabs>
         <button
           className="flex h-10 w-10 items-center justify-center rounded-md bg-neutral-900 text-white"
           type="button"
@@ -152,17 +155,5 @@ function Toast({ message }: { message: string }) {
     <div className="pointer-events-none fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-1/2 z-[60] -translate-x-1/2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-800 shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
       {message}
     </div>
-  );
-}
-
-function SortButton({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) {
-  return (
-    <button
-      className={`h-9 rounded px-3 text-sm font-medium transition ${active ? "bg-neutral-100 text-neutral-950" : "text-neutral-500"}`}
-      type="button"
-      onClick={onClick}
-    >
-      {label}
-    </button>
   );
 }

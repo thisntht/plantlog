@@ -1,6 +1,5 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { addMonths, endOfMonth, format, getDay, startOfMonth } from "date-fns";
@@ -10,6 +9,7 @@ import { BottomSheet } from "@/components/BottomSheet";
 import { PlantAvatar } from "@/components/PlantAvatar";
 import { WateringLogDetailSheet } from "@/components/WateringLogDetailSheet";
 import { WateringLogFormSheet } from "@/components/WateringLogFormSheet";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { dateToISO, formatKoreanDate, todayISO } from "@/lib/date";
 import { getLastWateredDate, getPlantLogs, getWateringIntervalSuggestion } from "@/lib/watering";
 import type { LogType, Plant, WateringLog } from "@/lib/types";
@@ -145,11 +145,13 @@ export function PlantDetail({ plant }: { plant: Plant }) {
         </section>
       ) : null}
 
-      <div className="mb-3 grid grid-cols-3 rounded-md border border-neutral-200 bg-white p-1">
-        <TabButton active={tab === "list"} icon={<List className="h-4 w-4" />} label="리스트" onClick={() => setTab("list")} />
-        <TabButton active={tab === "calendar"} icon={<CalendarDays className="h-4 w-4" />} label="캘린더" onClick={() => setTab("calendar")} />
-        <TabButton active={tab === "album"} icon={<ImageIcon className="h-4 w-4" />} label="앨범" onClick={() => setTab("album")} />
-      </div>
+      <Tabs className="mb-3" value={tab} onValueChange={(value) => setTab(value as Tab)}>
+        <TabsList className="grid w-full grid-cols-3" aria-label="식물 기록 보기">
+          <TabsTrigger className="gap-1.5" value="list"><List aria-hidden className="h-4 w-4" />리스트</TabsTrigger>
+          <TabsTrigger className="gap-1.5" value="calendar"><CalendarDays aria-hidden className="h-4 w-4" />캘린더</TabsTrigger>
+          <TabsTrigger className="gap-1.5" value="album"><ImageIcon aria-hidden className="h-4 w-4" />앨범</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
         {logTypeOrder.map((type) => {
@@ -387,19 +389,6 @@ function InfoPill({ label, value }: { label: string; value: string }) {
       <p className="text-[0.68rem] text-neutral-400">{label}</p>
       <p className="mt-0.5 truncate text-sm font-medium text-neutral-800">{value}</p>
     </div>
-  );
-}
-
-function TabButton({ active, icon, label, onClick }: { active: boolean; icon: ReactNode; label: string; onClick: () => void }) {
-  return (
-    <button
-      className={`flex h-10 items-center justify-center gap-1.5 rounded text-sm font-medium ${active ? "bg-neutral-100 text-neutral-950" : "text-neutral-500"}`}
-      type="button"
-      onClick={onClick}
-    >
-      {icon}
-      {label}
-    </button>
   );
 }
 
