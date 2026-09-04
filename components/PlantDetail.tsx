@@ -396,18 +396,24 @@ function InfoPill({ className = "", label, value }: { className?: string; label:
 }
 
 function LogList({ logs, onSelect }: { logs: WateringLog[]; onSelect: (log: WateringLog) => void }) {
+  if (logs.length === 0) {
+    return <p className="rounded-lg border border-neutral-200 bg-white p-4 text-sm text-neutral-500">표시할 기록이 없어요.</p>;
+  }
+
   return (
-    <div className="space-y-2">
-      {logs.map((log) => (
-        <button className="w-full rounded-lg border border-neutral-200 bg-white p-4 text-left" key={log.id} type="button" onClick={() => onSelect(log)}>
-          <div className="flex items-center justify-between gap-3">
-            <p className="font-medium text-neutral-900">{formatKoreanDate(log.wateredDate)}</p>
-            <span className="shrink-0 rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-500">{logTypeLabels[log.logType]}</span>
-          </div>
-          {log.memo ? <p className="mt-1 truncate text-sm text-neutral-500">{log.memo}</p> : null}
-        </button>
+    <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
+      {logs.map((log, index) => (
+        <div key={log.id}>
+          <button className="w-full px-4 py-3.5 text-left transition-colors hover:bg-neutral-50" type="button" onClick={() => onSelect(log)}>
+            <div className="flex items-center justify-between gap-3">
+              <p className="font-medium text-neutral-900">{formatKoreanDate(log.wateredDate)}</p>
+              <span className="shrink-0 rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-500">{logTypeLabels[log.logType]}</span>
+            </div>
+            {log.memo ? <p className="mt-1 truncate text-sm text-neutral-500">{log.memo}</p> : null}
+          </button>
+          {index < logs.length - 1 ? <div className="mx-4 border-t border-neutral-200" /> : null}
+        </div>
       ))}
-      {logs.length === 0 ? <p className="rounded-lg border border-neutral-200 bg-white p-4 text-sm text-neutral-500">표시할 기록이 없어요.</p> : null}
     </div>
   );
 }
