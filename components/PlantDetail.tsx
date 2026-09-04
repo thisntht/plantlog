@@ -413,6 +413,7 @@ const detailWeekdays = ["일", "월", "화", "수", "목", "금", "토"];
 
 function PlantMiniCalendar({ logs, onSelect }: { logs: WateringLog[]; onSelect: (log: WateringLog) => void }) {
   const [month, setMonth] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const monthStart = startOfMonth(month);
   const monthEnd = endOfMonth(month);
   const leading = getDay(monthStart);
@@ -424,6 +425,11 @@ function PlantMiniCalendar({ logs, onSelect }: { logs: WateringLog[]; onSelect: 
       return { key: date, date, day: index + 1 };
     })
   ];
+  const selectedLogs = selectedDate ? logs.filter((log) => log.wateredDate === selectedDate) : [];
+  const moveMonth = (amount: number) => {
+    setMonth((current) => addMonths(current, amount));
+    setSelectedDate(null);
+  };
 
   return (
     <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
@@ -431,7 +437,7 @@ function PlantMiniCalendar({ logs, onSelect }: { logs: WateringLog[]; onSelect: 
         <button
           className="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-400 hover:bg-neutral-50"
           type="button"
-          onClick={() => setMonth((current) => addMonths(current, -1))}
+          onClick={() => moveMonth(-1)}
           aria-label="이전 달"
         >
           <ChevronLeft aria-hidden className="h-4 w-4" />
@@ -440,7 +446,7 @@ function PlantMiniCalendar({ logs, onSelect }: { logs: WateringLog[]; onSelect: 
         <button
           className="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-400 hover:bg-neutral-50"
           type="button"
-          onClick={() => setMonth((current) => addMonths(current, 1))}
+          onClick={() => moveMonth(1)}
           aria-label="다음 달"
         >
           <ChevronRight aria-hidden className="h-4 w-4" />
@@ -455,21 +461,43 @@ function PlantMiniCalendar({ logs, onSelect }: { logs: WateringLog[]; onSelect: 
       </div>
       <div className="grid grid-cols-7 p-2">
         {cells.map((cell) => {
-          const log = cell.date ? logs.find((item) => item.wateredDate === cell.date) : undefined;
+          const dateLogs = cell.date ? logs.filter((item) => item.wateredDate === cell.date) : [];
+          const isSelected = cell.date === selectedDate;
           return (
             <button
-              className="flex aspect-square min-w-0 flex-col items-center justify-center rounded-md text-sm text-neutral-600 hover:bg-neutral-50 disabled:hover:bg-white"
+              className={`flex aspect-square min-w-0 flex-col items-center justify-center rounded-md text-sm text-neutral-600 hover:bg-neutral-50 disabled:hover:bg-white ${isSelected ? "bg-neutral-100 font-semibold text-neutral-950" : ""}`}
               key={cell.key}
               type="button"
               disabled={!cell.date}
-              onClick={() => log && onSelect(log)}
+              aria-label={cell.date && dateLogs.length > 0 ? `${cell.day}일, 기록 ${dateLogs.length}개` : undefined}
+              onClick={() => {
+                if (dateLogs.length === 1) onSelect(dateLogs[0]);
+                if (dateLogs.length > 1) setSelectedDate(cell.date ?? null);
+              }}
             >
               {cell.day}
-              {cell.date ? log ? <span className={`mt-1 h-1.5 w-1.5 rounded-full ${logTypeDotClass[log.logType]}`} /> : <span className="mt-1 h-1.5 w-1.5" /> : null}
+              {cell.date ? (
+                <span className="mt-1 flex h-1.5 items-center gap-0.5" aria-hidden>
+                  {dateLogs.slice(0, 3).map((log) => <span className={`h-1.5 w-1.5 rounded-full ${logTypeDotClass[log.logType]}`} key={log.id} />)}
+                </span>
+              ) : null}
             </button>
           );
         })}
       </div>
+      {selectedDate && selectedLogs.length > 1 ? (
+        <div className="border-t border-neutral-200 p-3">
+          <p className="mb-2 text-xs font-semibold text-neutral-500">{formatKoreanDate(selectedDate)} · 기록 {selectedLogs.length}개</p>
+          <div className="space-y-2">
+            {selectedLogs.map((log) => (
+              <button className="flex w-full items-center justify-between rounded-md bg-neutral-50 px-3 py-2 text-left text-sm" key={log.id} type="button" onClick={() => onSelect(log)}>
+                <span className="truncate font-medium text-neutral-800">{log.memo || logTypeLabels[log.logType]}</span>
+                <span className="ml-3 shrink-0 text-xs text-neutral-400">{logTypeLabels[log.logType]}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
